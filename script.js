@@ -3,10 +3,9 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChang
 import { getFirestore, doc, setDoc, updateDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const ADMIN_EMAIL = "bryan.drouet24@gmail.com"; 
-const BOOSTER_SIZE = 5; 
 const COOLDOWN_MINUTES = 5; 
 
-// --- CONFIG FIREBASE ---
+// CONFIG FIREBASE
 const firebaseConfig = {
     apiKey: "AIzaSyBdtS508E3KBTZHfOTb7kl-XDc9vVn3oZI",
     authDomain: "tcgp-27e34.firebaseapp.com",
@@ -21,7 +20,6 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// (GAME_CONFIG reste inchangé avec tes icônes locales...)
 const GAME_CONFIG = {
     dropRates: [
         { type: 'common',     chance: 55,  filename: 'common.json', label: "Commune", weight: 1 },
@@ -31,42 +29,41 @@ const GAME_CONFIG = {
         { type: 'secret',     chance: 1,   filename: 'secret.json', label: "SECRÈTE", weight: 5 }
     ],
     icons: {
-        Fire: 'icons/Pokémon_Fire_Type_Icon.svg',
-        Water: 'icons/Pokémon_Water_Type_Icon.svg',
-        Grass: 'icons/Pokémon_Grass_Type_Icon.svg',
-        Electric: 'icons/Pokémon_Electric_Type_Icon.svg',
-        Psychic: 'icons/Pokémon_Psychic_Type_Icon.svg',
-        Fighting: 'icons/Pokémon_Fighting_Type_Icon.svg',
-        Darkness: 'icons/Pokémon_Dark_Type_Icon.svg', 
-        Metal: 'icons/Pokémon_Steel_Type_Icon.svg',
-        Fairy: 'icons/Pokémon_Fairy_Type_Icon.svg',
-        Dragon: 'icons/Pokémon_Dragon_Type_Icon.svg',
-        Ice: 'icons/Pokémon_Ice_Type_Icon.svg',
-        Ground: 'icons/Pokémon_Ground_Type_Icon.svg',
-        Flying: 'icons/Pokémon_Flying_Type_Icon.svg',
-        Bug: 'icons/Pokémon_Bug_Type_Icon.svg',
-        Rock: 'icons/Pokémon_Rock_Type_Icon.svg',
-        Ghost: 'icons/Pokémon_Ghost_Type_Icon.svg',
-        Poison: 'icons/Pokémon_Poison_Type_Icon.svg',
-        Normal: 'icons/Pokémon_Normal_Type_Icon.svg',
-        Colorless: 'icons/Pokémon_Normal_Type_Icon.svg'
+        // NOMS DE FICHIERS SIMPLIFIÉS (Minuscules)
+        Fire: 'icons/fire.svg',
+        Water: 'icons/water.svg',
+        Grass: 'icons/grass.svg',
+        Electric: 'icons/electric.svg',
+        Psychic: 'icons/psychic.svg',
+        Fighting: 'icons/fighting.svg',
+        Darkness: 'icons/dark.svg',
+        Metal: 'icons/steel.svg',
+        Fairy: 'icons/fairy.svg',
+        Dragon: 'icons/dragon.svg',
+        Ice: 'icons/ice.svg',
+        Ground: 'icons/ground.svg',
+        Flying: 'icons/flying.svg',
+        Bug: 'icons/bug.svg',
+        Rock: 'icons/rock.svg',
+        Ghost: 'icons/ghost.svg',
+        Poison: 'icons/poison.svg',
+        Normal: 'icons/normal.svg',
+        Colorless: 'icons/normal.svg'
     }
 };
 
 let userCardsCache = []; 
 let cooldownInterval = null;
 
-// --- GESTION POPUP (Remplace Alert) ---
+// GESTION POPUP
 window.showPopup = (title, msg) => {
     document.getElementById('popup-title').innerText = title;
     document.getElementById('popup-msg').innerText = msg;
     document.getElementById('custom-popup-overlay').style.display = 'flex';
 };
-window.closePopup = () => {
-    document.getElementById('custom-popup-overlay').style.display = 'none';
-};
+window.closePopup = () => { document.getElementById('custom-popup-overlay').style.display = 'none'; };
 
-// --- AUTHENTIFICATION ---
+// AUTH & LOAD
 onAuthStateChanged(auth, async (user) => {
     const loader = document.getElementById('global-loader');
     
@@ -75,14 +72,12 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('game-app').style.display = 'block';
         document.getElementById('user-display').innerText = user.email.split('@')[0];
         
-        // ADMIN LINK
         const isAdmin = (user.email === ADMIN_EMAIL);
         document.getElementById('admin-link-container').style.display = isAdmin ? 'block' : 'none';
 
-        // Check Notifications permission on first load
         checkNotificationStatus();
-
         await loadCollection(user.uid);
+        
         if (!isAdmin) await checkCooldown(user.uid);
         else enableBoosterButton(true);
 
@@ -90,58 +85,11 @@ onAuthStateChanged(auth, async (user) => {
     } else {
         document.getElementById('game-app').style.display = 'none';
         document.getElementById('auth-overlay').style.display = 'flex';
-        if(cooldownInterval) clearInterval(cooldownInterval);
         loader.style.display = 'none';
     }
 });
 
-// --- NOTIFICATIONS SYSTEM ---
-window.requestNotification = async () => {
-    if (!("Notification" in window)) {
-        window.showPopup("Erreur", "Votre navigateur ne supporte pas les notifications.");
-        return;
-    }
-    
-    const permission = await Notification.requestPermission();
-    if (permission === "granted") {
-        window.showPopup("Succès", "Notifications activées ! Vous serez averti quand un booster sera prêt.");
-        document.getElementById('notif-bell').classList.add('bell-active');
-        new Notification("Poké-TCG", { body: "Les notifications fonctionnent !", icon: "icons/Pokémon_Normal_Type_Icon.svg" });
-    } else {
-        window.showPopup("Refusé", "Vous avez bloqué les notifications.");
-        document.getElementById('notif-bell').classList.remove('bell-active');
-    }
-};
-
-function checkNotificationStatus() {
-    if (Notification.permission === "granted") {
-        document.getElementById('notif-bell').classList.add('bell-active');
-    } else if (Notification.permission === "default") {
-        // Demande automatique à la première connexion si pas encore décidé
-        if (!localStorage.getItem('notifAsked')) {
-            window.requestNotification();
-            localStorage.setItem('notifAsked', 'true');
-        }
-    }
-}
-
-function sendReadyNotification() {
-    if (Notification.permission === "granted") {
-        new Notification("Booster Prêt ! 🎁", {
-            body: "Votre délai d'attente est terminé. Venez ouvrir vos cartes !",
-            icon: "icons/Pokémon_Fire_Type_Icon.svg"
-        });
-    }
-}
-
-// (Auth Functions: googleLogin, etc...)
-window.googleLogin = async () => authUser(signInWithPopup(auth, provider));
-window.signUp = async () => { const e = document.getElementById('email').value; const p = document.getElementById('password').value; authUser(createUserWithEmailAndPassword(auth, e, p)); };
-window.signIn = async () => { try { await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); } catch(e) { window.showPopup("Erreur", e.message); } };
-window.logout = () => signOut(auth);
-async function authUser(promise) { try { const res = await promise; const ref = doc(db, "players", res.user.uid); const snap = await getDoc(ref); if (!snap.exists()) await setDoc(ref, { email: res.user.email, collection: [], lastDrawTime: 0 }); } catch (e) { console.error(e); } }
-
-// --- COOLDOWN ---
+// COOLDOWN
 async function checkCooldown(uid) {
     const snap = await getDoc(doc(db, "players", uid));
     if (snap.exists()) {
@@ -150,11 +98,8 @@ async function checkCooldown(uid) {
         const diff = now - lastDraw;
         const cooldownMs = COOLDOWN_MINUTES * 60 * 1000;
 
-        if (diff < cooldownMs) {
-            startTimer(cooldownMs - diff);
-        } else {
-            enableBoosterButton(true);
-        }
+        if (diff < cooldownMs) startTimer(cooldownMs - diff);
+        else enableBoosterButton(true);
     } else {
         enableBoosterButton(true);
     }
@@ -166,7 +111,6 @@ function startTimer(durationMs) {
     const val = document.getElementById('timer-val');
     
     btn.disabled = true;
-    btn.classList.add('disabled');
     btn.innerHTML = `<div class="booster-content">RECHARGEMENT...</div>`;
     display.style.display = 'block';
 
@@ -178,7 +122,6 @@ function startTimer(durationMs) {
         if (remaining <= 0) {
             clearInterval(cooldownInterval);
             enableBoosterButton(true);
-            sendReadyNotification(); // Envoi la notif !
             return;
         }
         const m = Math.floor((remaining / 1000 / 60) % 60);
@@ -194,14 +137,13 @@ function enableBoosterButton(enabled) {
     const display = document.getElementById('cooldown-display');
     if (enabled) {
         btn.disabled = false;
-        btn.classList.remove('disabled');
         btn.innerHTML = '<div class="booster-content">OUVRIR UN BOOSTER</div>';
         display.style.display = 'none';
         if (cooldownInterval) clearInterval(cooldownInterval);
     }
 }
 
-// --- DRAW ---
+// DRAW CARD (5 ou 6 cartes)
 window.drawCard = async () => {
     const user = auth.currentUser;
     if (!user) return;
@@ -244,7 +186,6 @@ window.drawCard = async () => {
             card.rarityKey = rarityConfig.type;
             card.rarityWeight = rarityConfig.weight;
             card.generation = selectedGen;
-            
             newCards.push(card);
         }
 
@@ -265,7 +206,6 @@ window.drawCard = async () => {
     }
 };
 
-// ... (Fonctions loadCollection, updateSort, renderCard : copie-les du code précédent, elles ne changent pas sauf alert() remplacé par window.showPopup())
 async function loadCollection(uid) {
     const snap = await getDoc(doc(db, "players", uid));
     if (snap.exists()) {
@@ -325,7 +265,8 @@ function renderCard(card, animate = false) {
     img.src = card.image;
     img.className = 'card-img';
     img.loading = 'lazy';
-    
+    img.onerror = () => { console.warn("Image error", card.name); };
+
     div.innerHTML = `
         ${label !== 'COMMUNE' ? `<div class="rarity-badge badge-${cssRarity}">${label}</div>` : ''}
         <div class="card-header"><span class="card-name">${card.name}</span><div class="hp-group">${card.hp} PV <img src="${icon}" class="type-icon big"></div></div>
@@ -336,3 +277,27 @@ function renderCard(card, animate = false) {
     div.querySelector('.img-frame').appendChild(img);
     if(animate) grid.prepend(div); else grid.appendChild(div);
 }
+
+// Notifications
+window.requestNotification = async () => {
+    if (!("Notification" in window)) return;
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+        document.getElementById('notif-bell').classList.add('bell-active');
+        new Notification("Poké-TCG", { body: "Notifications activées !", icon: "icons/fire.svg" });
+    }
+};
+function checkNotificationStatus() {
+    if (Notification.permission === "granted") document.getElementById('notif-bell').classList.add('bell-active');
+    else if (Notification.permission === "default" && !localStorage.getItem('notifAsked')) {
+        window.requestNotification();
+        localStorage.setItem('notifAsked', 'true');
+    }
+}
+
+// Auth Helpers
+window.googleLogin = async () => authUser(signInWithPopup(auth, provider));
+window.signUp = async () => { const e = document.getElementById('email').value; const p = document.getElementById('password').value; authUser(createUserWithEmailAndPassword(auth, e, p)); };
+window.signIn = async () => { try { await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); } catch(e) { window.showPopup("Erreur", e.message); } };
+window.logout = () => signOut(auth);
+async function authUser(promise) { try { const res = await promise; const ref = doc(db, "players", res.user.uid); const snap = await getDoc(ref); if (!snap.exists()) await setDoc(ref, { email: res.user.email, collection: [], lastDrawTime: 0 }); } catch (e) { console.error(e); } }

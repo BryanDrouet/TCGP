@@ -4,37 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Poké-TCG Ultimate</title>
+    
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
 
-    <div id="custom-popup-overlay" style="display: none;">
-        <div class="popup-box">
-            <div id="popup-title" class="popup-title">TITRE</div>
-            <div id="popup-msg" class="popup-msg">Message</div>
-            <button onclick="closePopup()" class="btn-popup">OK</button>
-        </div>
-    </div>
-
     <div id="global-loader">
         <div class="pokeball-spinner"><div class="pokeball-top"></div><div class="pokeball-bottom"></div><div class="pokeball-center"></div></div>
-        <h2>Chargement...</h2>
+        <h2>Chargement du Monde...</h2>
     </div>
 
     <div id="auth-overlay" style="display:none;">
         <div class="login-box">
             <img src="https://upload.wikimedia.org/wikipedia/commons/9/98/International_Pok%C3%A9mon_logo.svg" alt="Logo" class="logo-img">
             <h2>Espace Dresseur</h2>
-            <button onclick="googleLogin()" class="btn-google"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> Connexion Google</button>
+            <button onclick="googleLogin()" class="btn-google">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> Connexion Google
+            </button>
             <div class="divider">OU</div>
             <input type="email" id="email" placeholder="Email" autocomplete="username">
             <input type="password" id="password" placeholder="Mot de passe" autocomplete="current-password">
             <div class="btn-group">
                 <button onclick="signIn()" class="btn-secondary">Connexion</button>
-                <button onclick="signUp()" class="btn-primary">Créer</button>
+                <button onclick="signUp()" class="btn-primary">Créer compte</button>
             </div>
             <p id="auth-msg"></p>
         </div>
@@ -44,8 +42,7 @@
         <nav>
             <div class="nav-logo">TCG <span class="version">Ultimate</span></div>
             <div class="player-stats">
-                <span id="notif-bell" class="notification-bell" title="Activer les notifications" onclick="requestNotification()">🔔</span>
-                
+                <span id="notif-bell" class="notification-bell" onclick="requestNotification()">🔔</span>
                 <span class="user-pill">👤 <span id="user-display">...</span></span>
                 <span class="user-pill">🃏 <span id="card-count">0</span></span>
                 <button onclick="logout()" class="btn-logout">Sortir</button>
@@ -53,6 +50,7 @@
         </nav>
 
         <div class="action-area">
+            
             <div class="custom-select-wrapper">
                 <label>SÉLECTION DU BOOSTER</label>
                 <div class="select-container">
@@ -70,17 +68,17 @@
             </div>
 
             <button onclick="drawCard()" id="btn-draw" class="btn-booster" disabled>
-                <div class="booster-content">VÉRIFICATION...</div>
+                <div class="booster-content">CHARGEMENT...</div>
             </button>
             
-            <div id="cooldown-display" style="display:none; margin-top:10px; color:#ff6b6b; font-weight:bold;">
-                ⏳ Prochain booster dans : <span id="timer-val">00:00</span>
+            <div id="cooldown-display" style="display:none;">
+                ⏳ Prochain dans : <span id="timer-val">00:00</span>
             </div>
             
             <div class="toolbar">
                 <div class="search-container">
                     <span class="search-icon">🔍</span>
-                    <input type="text" id="search-input" placeholder="Rechercher..." oninput="updateSort()">
+                    <input type="text" id="search-input" placeholder="Rechercher une carte..." oninput="updateSort()">
                 </div>
                 <div class="sort-container">
                     <select id="sort-select" onchange="updateSort()">
@@ -90,16 +88,24 @@
                         <option value="name-asc">🔤 Nom</option>
                         <option value="gen-asc">🌍 Génération</option>
                     </select>
-                    <span class="select-arrow">▼</span>
+                    <span class="sort-arrow">▼</span>
                 </div>
             </div>
 
             <div id="admin-link-container" style="display: none; margin-top: 20px;">
-                <a href="admin.html" class="btn-admin" style="text-decoration: none; display:inline-block;">⚙️ ACCÉDER AU DASHBOARD ADMIN</a>
+                <a href="admin.html" class="btn-admin-link">⚙️ ACCÉDER AU DASHBOARD ADMIN</a>
             </div>
         </div>
 
         <div id="cards-grid" class="grid-container"></div>
+    </div>
+
+    <div id="custom-popup-overlay" style="display: none;">
+        <div class="popup-box">
+            <div id="popup-title" class="popup-title">INFO</div>
+            <div id="popup-msg" class="popup-msg">...</div>
+            <button onclick="closePopup()" class="btn-popup">OK</button>
+        </div>
     </div>
 
     <script type="module" src="script.js"></script>
