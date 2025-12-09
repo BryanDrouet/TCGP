@@ -1,0 +1,71 @@
+[
+  {
+    "id": 387,
+    "name": "Tortipouss",
+    "hp": 110,
+    "types": [
+      "Grass"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/387.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 65
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "uncommon"
+  },
+  {
+    "id": 390,
+    "name": "Ouisticram",
+    "hp": 88,
+    "types": [
+      "Fire"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/390.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 58
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "uncommon"
+  },
+  {
+    "id": 393,
+    "name": "Tiplouf",
+    "hp": 106,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/393.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 54
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "uncommon"
+  }
+]

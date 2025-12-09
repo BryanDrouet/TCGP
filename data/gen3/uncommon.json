@@ -1,0 +1,71 @@
+[
+  {
+    "id": 252,
+    "name": "Arcko",
+    "hp": 80,
+    "types": [
+      "Grass"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/252.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 50
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "uncommon"
+  },
+  {
+    "id": 255,
+    "name": "Poussifeu",
+    "hp": 90,
+    "types": [
+      "Fire"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/255.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 60
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "uncommon"
+  },
+  {
+    "id": 258,
+    "name": "Gobou",
+    "hp": 100,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/258.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 66
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "uncommon"
+  }
+]

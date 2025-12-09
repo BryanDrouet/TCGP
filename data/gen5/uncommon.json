@@ -1,0 +1,71 @@
+[
+  {
+    "id": 495,
+    "name": "Vipélierre",
+    "hp": 90,
+    "types": [
+      "Grass"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/495.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 50
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "uncommon"
+  },
+  {
+    "id": 498,
+    "name": "Gruikui",
+    "hp": 130,
+    "types": [
+      "Fire"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/498.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 62
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "uncommon"
+  },
+  {
+    "id": 501,
+    "name": "Moustillon",
+    "hp": 110,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/501.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 56
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "uncommon"
+  }
+]

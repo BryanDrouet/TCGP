@@ -6,6 +6,9 @@
     <title>Poké-TCG Online</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
 <body>
 
@@ -45,21 +48,30 @@
 
         <div class="action-area">
             <button onclick="drawCard()" id="btn-draw" class="btn-booster">
-                <div class="booster-content">
-                    OUVRIR UN BOOSTER
-                </div>
+                <div class="booster-content">OUVRIR UN BOOSTER</div>
             </button>
             
             <details class="admin-zone">
-                <summary>🛠️ Outils Admin (Génération des JSONs)</summary>
-                <p>Clique sur le bouton ci-dessous, attends 30s et copie les résultats de la console (F12) dans tes fichiers JSON.</p>
-                <button onclick="generateData()" class="btn-admin">Lancer la génération</button>
+                <summary>🛠️ Outils Admin (Génération)</summary>
+                <p>Télécharge toutes les générations (1 à 7) triées dans un fichier ZIP.</p>
+                <button onclick="downloadAllGensZip()" class="btn-admin">💾 TÉLÉCHARGER TOUT (ZIP)</button>
             </details>
         </div>
 
-        <div id="cards-grid" class="grid-container">
-            </div>
+        <div id="cards-grid" class="grid-container"></div>
+    </div>
 
+    <div id="dl-toast" style="display: none;">
+        <div class="toast-header">
+            <span class="spinner-small"></span>
+            <strong id="toast-title">Téléchargement en cours...</strong>
+        </div>
+        <div class="toast-body">
+            <span id="toast-msg">Initialisation...</span>
+            <div class="progress-bg">
+                <div id="toast-bar" style="width: 0%;"></div>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="script.js"></script>

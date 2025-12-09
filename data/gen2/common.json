@@ -1,0 +1,2164 @@
+[
+  {
+    "id": 153,
+    "name": "Macronium",
+    "hp": 120,
+    "types": [
+      "Grass"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/153.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 61
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 156,
+    "name": "Feurisson",
+    "hp": 116,
+    "types": [
+      "Fire"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/156.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 62
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 159,
+    "name": "Crocrodil",
+    "hp": 130,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/159.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 73
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 161,
+    "name": "Fouinette",
+    "hp": 70,
+    "types": [
+      "Normal"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/161.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 50
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 162,
+    "name": "Fouinar",
+    "hp": 170,
+    "types": [
+      "Normal"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/162.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 70
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 163,
+    "name": "Hoothoot",
+    "hp": 120,
+    "types": [
+      "Normal"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/163.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 40
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 164,
+    "name": "Noarfang",
+    "hp": 200,
+    "types": [
+      "Normal"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/164.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 53
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 165,
+    "name": "Coxy",
+    "hp": 80,
+    "types": [
+      "Bug"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/165.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 33
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 166,
+    "name": "Coxyclaque",
+    "hp": 110,
+    "types": [
+      "Bug"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/166.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 43
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 167,
+    "name": "Mimigal",
+    "hp": 80,
+    "types": [
+      "Bug"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/167.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 60
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 168,
+    "name": "Migalos",
+    "hp": 140,
+    "types": [
+      "Bug"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/168.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 80
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 169,
+    "name": "Nostenfer",
+    "hp": 170,
+    "types": [
+      "Poison"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/169.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 80
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 170,
+    "name": "Loupio",
+    "hp": 150,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/170.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 45
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 171,
+    "name": "Lanturn",
+    "hp": 250,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/171.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 58
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 172,
+    "name": "Pichu",
+    "hp": 40,
+    "types": [
+      "Electric"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/172.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 46
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 173,
+    "name": "Mélo",
+    "hp": 100,
+    "types": [
+      "Fairy"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/173.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 36
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 174,
+    "name": "Toudoudou",
+    "hp": 180,
+    "types": [
+      "Normal"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/174.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 40
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 175,
+    "name": "Togepi",
+    "hp": 70,
+    "types": [
+      "Fairy"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/175.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 33
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 176,
+    "name": "Togetic",
+    "hp": 110,
+    "types": [
+      "Fairy"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/176.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 46
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 177,
+    "name": "Natu",
+    "hp": 80,
+    "types": [
+      "Psychic"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/177.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 53
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 178,
+    "name": "Xatu",
+    "hp": 130,
+    "types": [
+      "Psychic"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/178.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 70
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 179,
+    "name": "Wattouat",
+    "hp": 110,
+    "types": [
+      "Electric"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/179.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 46
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 180,
+    "name": "Lainergie",
+    "hp": 140,
+    "types": [
+      "Electric"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/180.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 56
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 181,
+    "name": "Pharamp",
+    "hp": 180,
+    "types": [
+      "Electric"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/181.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 70
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 182,
+    "name": "Joliflor",
+    "hp": 150,
+    "types": [
+      "Grass"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/182.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 73
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 183,
+    "name": "Marill",
+    "hp": 140,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/183.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 33
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 184,
+    "name": "Azumarill",
+    "hp": 200,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/184.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 53
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 185,
+    "name": "Simularbre",
+    "hp": 140,
+    "types": [
+      "Rock"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/185.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 86
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 186,
+    "name": "Tarpaud",
+    "hp": 180,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/186.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 70
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 187,
+    "name": "Granivol",
+    "hp": 70,
+    "types": [
+      "Grass"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/187.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 43
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 188,
+    "name": "Floravol",
+    "hp": 110,
+    "types": [
+      "Grass"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/188.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 50
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 189,
+    "name": "Cotovol",
+    "hp": 150,
+    "types": [
+      "Grass"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/189.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 56
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 190,
+    "name": "Capumain",
+    "hp": 110,
+    "types": [
+      "Normal"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/190.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 66
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 191,
+    "name": "Tournegrin",
+    "hp": 60,
+    "types": [
+      "Grass"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/191.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 40
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 192,
+    "name": "Héliatronc",
+    "hp": 150,
+    "types": [
+      "Grass"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/192.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 70
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 193,
+    "name": "Yanma",
+    "hp": 130,
+    "types": [
+      "Bug"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/193.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 63
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 194,
+    "name": "Axoloto",
+    "hp": 110,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/194.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 50
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 195,
+    "name": "Maraiste",
+    "hp": 190,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/195.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 76
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 196,
+    "name": "Mentali",
+    "hp": 130,
+    "types": [
+      "Psychic"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/196.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 63
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 197,
+    "name": "Noctali",
+    "hp": 190,
+    "types": [
+      "Dark"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/197.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 63
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 198,
+    "name": "Cornèbre",
+    "hp": 120,
+    "types": [
+      "Dark"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/198.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 76
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 199,
+    "name": "Roigada",
+    "hp": 190,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/199.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 70
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 200,
+    "name": "Feuforêve",
+    "hp": 120,
+    "types": [
+      "Ghost"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/200.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 60
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 201,
+    "name": "Zarbi",
+    "hp": 96,
+    "types": [
+      "Psychic"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/201.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 68
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 202,
+    "name": "Qulbutoké",
+    "hp": 380,
+    "types": [
+      "Psychic"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/202.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 42
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 203,
+    "name": "Girafarig",
+    "hp": 140,
+    "types": [
+      "Normal"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/203.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 73
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 204,
+    "name": "Pomdepik",
+    "hp": 100,
+    "types": [
+      "Bug"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/204.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 63
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 205,
+    "name": "Foretress",
+    "hp": 150,
+    "types": [
+      "Bug"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/205.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 80
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 206,
+    "name": "Insolourdo",
+    "hp": 200,
+    "types": [
+      "Normal"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/206.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 66
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 207,
+    "name": "Scorplane",
+    "hp": 130,
+    "types": [
+      "Ground"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/207.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 70
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 208,
+    "name": "Steelix",
+    "hp": 150,
+    "types": [
+      "Steel"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/208.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 76
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 209,
+    "name": "Snubbull",
+    "hp": 120,
+    "types": [
+      "Fairy"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/209.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 73
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 210,
+    "name": "Granbull",
+    "hp": 180,
+    "types": [
+      "Fairy"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/210.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 100
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 211,
+    "name": "Qwilfish",
+    "hp": 130,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/211.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 83
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 212,
+    "name": "Cizayox",
+    "hp": 140,
+    "types": [
+      "Bug"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/212.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 106
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 213,
+    "name": "Caratroc",
+    "hp": 40,
+    "types": [
+      "Bug"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/213.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 26
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 214,
+    "name": "Scarhino",
+    "hp": 160,
+    "types": [
+      "Bug"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/214.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 103
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 215,
+    "name": "Farfuret",
+    "hp": 110,
+    "types": [
+      "Dark"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/215.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 83
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 216,
+    "name": "Teddiursa",
+    "hp": 120,
+    "types": [
+      "Normal"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/216.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 73
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 217,
+    "name": "Ursaring",
+    "hp": 180,
+    "types": [
+      "Normal"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/217.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 106
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 218,
+    "name": "Limagma",
+    "hp": 80,
+    "types": [
+      "Fire"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/218.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 46
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 219,
+    "name": "Volcaropod",
+    "hp": 120,
+    "types": [
+      "Fire"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/219.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 53
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 220,
+    "name": "Marcacrin",
+    "hp": 100,
+    "types": [
+      "Ice"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/220.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 53
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 221,
+    "name": "Cochignon",
+    "hp": 200,
+    "types": [
+      "Ice"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/221.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 86
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 222,
+    "name": "Corayon",
+    "hp": 130,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/222.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 56
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 223,
+    "name": "Rémoraid",
+    "hp": 70,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/223.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 63
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 224,
+    "name": "Octillery",
+    "hp": 150,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/224.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 90
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 225,
+    "name": "Cadoizo",
+    "hp": 90,
+    "types": [
+      "Ice"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/225.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 56
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 226,
+    "name": "Démanta",
+    "hp": 170,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/226.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 46
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 227,
+    "name": "Airmure",
+    "hp": 130,
+    "types": [
+      "Steel"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/227.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 73
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 228,
+    "name": "Malosse",
+    "hp": 90,
+    "types": [
+      "Dark"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/228.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 60
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 229,
+    "name": "Démolosse",
+    "hp": 150,
+    "types": [
+      "Dark"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/229.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 80
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 230,
+    "name": "Hyporoi",
+    "hp": 150,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/230.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 83
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 231,
+    "name": "Phanpy",
+    "hp": 180,
+    "types": [
+      "Ground"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/231.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 60
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 232,
+    "name": "Donphan",
+    "hp": 180,
+    "types": [
+      "Ground"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/232.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 100
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 233,
+    "name": "Porygon2",
+    "hp": 170,
+    "types": [
+      "Normal"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/233.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 73
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 234,
+    "name": "Cerfrousse",
+    "hp": 146,
+    "types": [
+      "Normal"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/234.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 83
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 235,
+    "name": "Queulorior",
+    "hp": 110,
+    "types": [
+      "Normal"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/235.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 33
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 236,
+    "name": "Debugant",
+    "hp": 70,
+    "types": [
+      "Fighting"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/236.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 43
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 237,
+    "name": "Kapoera",
+    "hp": 100,
+    "types": [
+      "Fighting"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/237.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 83
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 238,
+    "name": "Lippouti",
+    "hp": 90,
+    "types": [
+      "Ice"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/238.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 40
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 239,
+    "name": "Élekid",
+    "hp": 90,
+    "types": [
+      "Electric"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/239.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 62
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 240,
+    "name": "Magby",
+    "hp": 90,
+    "types": [
+      "Fire"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/240.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 70
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 241,
+    "name": "Écrémeuh",
+    "hp": 190,
+    "types": [
+      "Normal"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/241.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 73
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 242,
+    "name": "Leuphorie",
+    "hp": 510,
+    "types": [
+      "Normal"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/242.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 26
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 243,
+    "name": "Raikou",
+    "hp": 180,
+    "types": [
+      "Electric"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/243.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 76
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 244,
+    "name": "Entei",
+    "hp": 230,
+    "types": [
+      "Fire"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/244.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 96
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 245,
+    "name": "Suicune",
+    "hp": 200,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/245.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 70
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 246,
+    "name": "Embrylex",
+    "hp": 100,
+    "types": [
+      "Rock"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/246.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 62
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 247,
+    "name": "Ymphect",
+    "hp": 140,
+    "types": [
+      "Rock"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/247.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 76
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 248,
+    "name": "Tyranocif",
+    "hp": 200,
+    "types": [
+      "Rock"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/248.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 109
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 249,
+    "name": "Lugia",
+    "hp": 212,
+    "types": [
+      "Psychic"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/249.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 80
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 250,
+    "name": "Ho-Oh",
+    "hp": 212,
+    "types": [
+      "Fire"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/250.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 106
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  },
+  {
+    "id": 251,
+    "name": "Celebi",
+    "hp": 200,
+    "types": [
+      "Psychic"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/251.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 86
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "common"
+  }
+]

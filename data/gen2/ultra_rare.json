@@ -1,0 +1,71 @@
+[
+  {
+    "id": 154,
+    "name": "Méganium",
+    "hp": 160,
+    "types": [
+      "Grass"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/154.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 74
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "ultra_rare"
+  },
+  {
+    "id": 157,
+    "name": "Typhlosion",
+    "hp": 156,
+    "types": [
+      "Fire"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/157.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 76
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "ultra_rare"
+  },
+  {
+    "id": 160,
+    "name": "Aligatueur",
+    "hp": 170,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/160.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 90
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "ultra_rare"
+  }
+]

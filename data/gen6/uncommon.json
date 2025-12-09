@@ -1,0 +1,71 @@
+[
+  {
+    "id": 650,
+    "name": "Marisson",
+    "hp": 112,
+    "types": [
+      "Grass"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/650.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 60
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "uncommon"
+  },
+  {
+    "id": 653,
+    "name": "Feunnec",
+    "hp": 80,
+    "types": [
+      "Fire"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/653.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 50
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "uncommon"
+  },
+  {
+    "id": 656,
+    "name": "Grenousse",
+    "hp": 82,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/656.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 57
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "uncommon"
+  }
+]

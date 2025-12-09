@@ -1,0 +1,71 @@
+[
+  {
+    "id": 1,
+    "name": "Bulbizarre",
+    "hp": 90,
+    "types": [
+      "Grass"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 52
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "uncommon"
+  },
+  {
+    "id": 4,
+    "name": "Salamèche",
+    "hp": 78,
+    "types": [
+      "Fire"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 54
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "uncommon"
+  },
+  {
+    "id": 7,
+    "name": "Carapuce",
+    "hp": 88,
+    "types": [
+      "Water"
+    ],
+    "image": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png",
+    "attacks": [
+      {
+        "name": "Attaque Rapide",
+        "cost": 1,
+        "damage": 10
+      },
+      {
+        "name": "Coup Spécial",
+        "cost": 3,
+        "damage": 52
+      }
+    ],
+    "weakness": "Standard",
+    "rarity_tag": "uncommon"
+  }
+]
