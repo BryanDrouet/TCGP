@@ -156,3 +156,67 @@ nav {
 .progress-bg { background: #444; height: 6px; border-radius: 3px; margin-top: 8px; overflow: hidden; }
 #toast-bar { height: 100%; background: #ffde00; transition: width 0.3s ease; }
 @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+
+/* --- BARRE D'OUTILS --- */
+.toolbar {
+    max-width: 1400px; margin: 0 auto 20px auto; padding: 0 20px;
+    display: flex; justify-content: space-between; align-items: center;
+}
+.sort-controls select {
+    background: #333; color: white; border: 1px solid #555;
+    padding: 8px; border-radius: 5px; cursor: pointer;
+}
+#cooldown-timer {
+    background: #222; padding: 8px 15px; border-radius: 20px;
+    border: 1px solid #d32f2f; color: #ff6b6b; font-weight: bold;
+}
+
+/* --- EFFETS HOLOGRAPHIQUES (Pour repérer les rares) --- */
+
+/* Animation de brillance qui traverse la carte */
+@keyframes holoShine {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* 1. CARTES RARES (Bordure bleue brillante) */
+.tcg-card.rare {
+    border-color: #388bf2;
+    box-shadow: 0 0 10px rgba(56, 139, 242, 0.4);
+}
+
+/* 2. ULTRA RARES (Doré + Effet Brillant) */
+.tcg-card.ultra-rare {
+    border-color: #ffd700;
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+    /* Petit effet arc-en-ciel subtil sur le fond */
+    background-image: linear-gradient(125deg, rgba(255,255,255,0) 30%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 70%) !important;
+    background-size: 200% 200%;
+    animation: holoShine 3s infinite;
+}
+
+/* 3. SECRETES (Violet + Arc-en-ciel intense) */
+.tcg-card.secret {
+    border: 10px solid transparent;
+    border-image: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000) 1;
+    box-shadow: 0 0 20px rgba(255, 0, 200, 0.5);
+    animation: pulseSecret 2s infinite alternate;
+}
+
+@keyframes pulseSecret {
+    from { transform: scale(1); box-shadow: 0 0 20px rgba(255, 0, 200, 0.5); }
+    to { transform: scale(1.02); box-shadow: 0 0 30px rgba(255, 0, 200, 0.8); }
+}
+
+/* Badge de rareté sur la carte */
+.rarity-badge {
+    position: absolute; top: -5px; right: -5px;
+    padding: 2px 8px; border-radius: 10px; font-size: 0.7em; font-weight: bold;
+    color: white; z-index: 5; text-transform: uppercase;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+}
+.badge-common { display: none; }
+.badge-rare { background: #388bf2; }
+.badge-ultra-rare { background: #ffd700; color: #333; }
+.badge-secret { background: linear-gradient(45deg, #7a00ff, #ff00c8); }

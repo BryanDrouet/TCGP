@@ -75,6 +75,19 @@
             </details>
         </div>
 
+        <div class="toolbar">
+            <div class="sort-controls">
+                <label>Trier par :</label>
+                <select id="sort-select" onchange="updateSort()">
+                    <option value="date-desc">📅 Récents</option>
+                    <option value="rarity-desc">💎 Rareté (Meilleures d'abord)</option>
+                    <option value="hp-desc">❤️ PV (Plus forts d'abord)</option>
+                    <option value="gen-asc">cw Génération</option>
+                </select>
+            </div>
+            <div id="cooldown-timer" style="display:none;">Prochain booster dans : <span id="timer-val">00:00</span></div>
+        </div>
+
         <div id="cards-grid" class="grid-container">
             </div>
 

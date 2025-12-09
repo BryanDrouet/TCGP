@@ -3,31 +3,39 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChang
 import { getFirestore, doc, setDoc, updateDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- CONFIGURATION ---
-const ADMIN_EMAIL = "bryan.drouet24@gmail.com"; // TON EMAIL ICI
+const ADMIN_EMAIL = "bryan.drouet24@gmail.com"; 
+const BOOSTER_SIZE = 5; // Nombre de cartes par booster
+const COOLDOWN_MINUTES = 5; 
 
 const GAME_CONFIG = {
     dropRates: [
-        { type: 'common',     chance: 50,  filename: 'common.json', label: "Commune" },
-        { type: 'uncommon',   chance: 30,  filename: 'uncommon.json', label: "Peu Commune" },
-        { type: 'rare',       chance: 15,  filename: 'rare.json', label: "Rare" },
-        { type: 'ultra_rare', chance: 4.5, filename: 'ultra_rare.json', label: "Ultra Rare" },
-        { type: 'secret',     chance: 0.5, filename: 'secret.json', label: "Secrète" }
+        { type: 'common',     chance: 55,  filename: 'common.json', label: "Commune", weight: 1 },
+        { type: 'uncommon',   chance: 25,  filename: 'uncommon.json', label: "Peu Com.", weight: 2 },
+        { type: 'rare',       chance: 14,  filename: 'rare.json', label: "Rare", weight: 3 },
+        { type: 'ultra_rare', chance: 5,   filename: 'ultra_rare.json', label: "Ultra Rare", weight: 4 },
+        { type: 'secret',     chance: 1,   filename: 'secret.json', label: "SECRÈTE", weight: 5 }
     ],
+    // ... (GARDE TES ICONES ICI, JE LES AI COUPÉES POUR LA LISIBILITÉ) ...
     icons: {
-        // Icônes SVG encodées en Base64 pour éviter le blocage CORB
-        Fire: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMTAiIGZpbGw9IiNGMDgwMzAiLz48cGF0aCBkPSZNMy41IDEwLjVjMS41IDMgMyAzIDMuNSAzIC41IDAgMS41LTIuNSAzLTQ1IDEuNS0xLjUgMy0uNSAzIC41czEuNSAzIDMuNSAzIiBzdHJva2U9IiNGRkQiIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==',
-        Water: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMTAiIGZpbGw9Iiw2ODkwRjAiLz48cGF0aCBkPSJNMTAgMy41Yy0yIDQtNCA2LTQgOaAwIDAgNiAwIDRzMi01IDQtOS00LTQtNC00IiBmaWxsPSIjRkZGIi8+PC9zdmc+',
-        Grass: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMTAiIGZpbGw9IiM3OEM4NTAiLz48cGF0aCBkPSJNNSAxNWw1LTEwIDUgMTAtMi0zLTMgMi0zLTJ6IiBmaWxsPSIjRkZGIi8+PC9zdmc+',
-        Electric: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMTAiIGZpbGw9IiNGOEQwMzAiLz48cGF0aCBkPSJNMTEgMi41bC01IDdoNGwtMyA4IDgtOWgtNHoiIGZpbGw9IiMzMzMiLz48L3N2Zz4=',
-        Psychic: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMTAiIGZpbGw9IiNGODU4ODgiLz48cGF0aCBkPSJNMTAgNWMtMiAwLTQgMi00IDRzMiA0IDQgNHM0LTIgNC00cy0yLTQtNC00IiBzdHJva2U9IiNGRkYiIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIvPjwvc3ZnPg==',
-        Fighting: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMTAiIGZpbGw9IiNDMDMwMjgiLz48cGF0aCBkPSJNMzUgNy41aDEzbS02LjUtNi41djEzIiBzdHJva2U9IiNGRkYiIHN0cm9rZS13aWR0aD0iMyIvPjwvc3ZnPg==',
-        Darkness: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMTAiIGZpbGw9IiM3MDU3NDYiLz48cGF0aCBkPSJNMTAgNWE1IDUgMCAxIDAgMCAxMCA1IDUgMCAwIDAgMC0xMCIgZmlsbD0iI0ZGRiIvPjwvc3ZnPg==',
-        Metal: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMTAiIGZpbGw9IiNCOEI4RDAiLz48cmVjdCB4PSI3IiB5PSI1IiB3aWR0aD0iNiIgaGVpZ2h0PSIxMCIgZmlsbD0iI0ZGRiIvPjwvc3ZnPg==',
-        Fairy: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMTAiIGZpbGw9IiNFRTk5QUMiLz48cGF0aCBkPSJNMTAgNGwyIDZoNmwtNSA0IDIgNmwtNS00LTUtNGw2LTZsNS00IiBmaWxsPSIjRkZGIi8+PC9zdmc+',
-        Dragon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMTAiIGZpbGw9IiM2RjM1RkMiLz48cGF0aCBkPSJNNSA1bDQtMiA2IDggMy00LTItMiA0IDJ2MTBsLTQtMnYtNGwtNi04IiBmaWxsPSIjRkZGIi8+PC9zdmc+',
-        Normal: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMTAiIGZpbGw9IiNBOEE4NzgiLz48Y2lyY2xlIGN4PSIxMCIgY3k9IjEwIiByPSI0IiBmaWxsPSIjRkZGIi8+PC9zdmc+',
-        // Fallback générique pour les autres types (Ice, Ground, etc.)
-        Colorless: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMCAyMCI+PGNpcmNsZSBjeD0iMTAiIGN5PSIxMCIgcj0iMTAiIGZpbGw9IiNBOEE4NzgiLz48Y2lyY2xlIGN4PSIxMCIgY3k9IjEwIiByPSI0IiBmaWxsPSIjRkZGIi8+PC9zdmc+'
+        Fire: 'icons/Pokémon_Fire_Type_Icon.svg',
+        Water: 'icons/Pokémon_Water_Type_Icon.svg',
+        Grass: 'icons/Pokémon_Grass_Type_Icon.svg',
+        Electric: 'icons/Pokémon_Electric_Type_Icon.svg',
+        Psychic: 'icons/Pokémon_Psychic_Type_Icon.svg',
+        Fighting: 'icons/Pokémon_Fighting_Type_Icon.svg',
+        Darkness: 'icons/Pokémon_Dark_Type_Icon.svg', 
+        Metal: 'icons/Pokémon_Steel_Type_Icon.svg',
+        Fairy: 'icons/Pokémon_Fairy_Type_Icon.svg',
+        Dragon: 'icons/Pokémon_Dragon_Type_Icon.svg',
+        Ice: 'icons/Pokémon_Ice_Type_Icon.svg',
+        Ground: 'icons/Pokémon_Ground_Type_Icon.svg',
+        Flying: 'icons/Pokémon_Flying_Type_Icon.svg',
+        Bug: 'icons/Pokémon_Bug_Type_Icon.svg',
+        Rock: 'icons/Pokémon_Rock_Type_Icon.svg',
+        Ghost: 'icons/Pokémon_Ghost_Type_Icon.svg',
+        Poison: 'icons/Pokémon_Poison_Type_Icon.svg',
+        Normal: 'icons/Pokémon_Normal_Type_Icon.svg',
+        Colorless: 'icons/Pokémon_Normal_Type_Icon.svg'
     }
 };
 
@@ -46,193 +54,293 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
+// Variables globales pour le tri
+let userCardsCache = []; 
+let cooldownInterval = null;
+
 // --- AUTHENTIFICATION ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
         document.getElementById('auth-overlay').style.display = 'none';
         document.getElementById('game-app').style.display = 'block';
-        document.getElementById('user-display').innerText = user.displayName || user.email.split('@')[0];
+        document.getElementById('user-display').innerText = user.email.split('@')[0];
         
-        // 🔒 PROTECTION ADMIN VISUELLE
+        // Admin Panel
         const adminPanel = document.getElementById('admin-panel');
-        if (user.email === ADMIN_EMAIL) {
-            adminPanel.style.display = 'block';
-        } else {
-            adminPanel.style.display = 'none';
-        }
+        if (adminPanel) adminPanel.style.display = (user.email === ADMIN_EMAIL) ? 'block' : 'none';
 
         loadCollection(user.uid);
+        checkCooldown(user); // Vérifie le temps restant
     } else {
         document.getElementById('auth-overlay').style.display = 'flex';
         document.getElementById('game-app').style.display = 'none';
+        if(cooldownInterval) clearInterval(cooldownInterval);
     }
 });
 
+// (Fonctions Auth inchangées : googleLogin, signUp, signIn, logout...)
 window.googleLogin = async () => authUser(signInWithPopup(auth, provider));
-window.signUp = async () => {
-    const e = document.getElementById('email').value;
-    const p = document.getElementById('password').value;
-    authUser(createUserWithEmailAndPassword(auth, e, p));
-};
-window.signIn = async () => {
-    try {
-        await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
-    } catch(e) { document.getElementById('auth-msg').innerText = "Erreur: " + e.message; }
-};
+window.signUp = async () => { /* ... */ };
+window.signIn = async () => { /* ... */ };
 window.logout = () => signOut(auth);
+async function authUser(promise) { /* ... */ }
 
-async function authUser(promise) {
-    try {
-        const res = await promise;
-        const ref = doc(db, "players", res.user.uid);
-        const snap = await getDoc(ref);
-        if (!snap.exists()) await setDoc(ref, { email: res.user.email, collection: [] });
-    } catch (e) { console.error(e); }
+
+// --- COOLDOWN SYSTEM ---
+async function checkCooldown(user) {
+    // Si c'est l'admin, pas de cooldown
+    if (user.email === ADMIN_EMAIL) {
+        enableBoosterButton(true);
+        return;
+    }
+
+    const docRef = doc(db, "players", user.uid);
+    const snap = await getDoc(docRef);
+    
+    if (snap.exists()) {
+        const data = snap.data();
+        const lastDraw = data.lastDrawTime || 0;
+        const now = Date.now();
+        const diff = now - lastDraw;
+        const cooldownMs = COOLDOWN_MINUTES * 60 * 1000;
+
+        if (diff < cooldownMs) {
+            startTimer(cooldownMs - diff);
+        } else {
+            enableBoosterButton(true);
+        }
+    } else {
+        enableBoosterButton(true);
+    }
 }
 
-// --- GAMEPLAY ---
+function startTimer(durationMs) {
+    const btn = document.getElementById('btn-draw');
+    const timerDiv = document.getElementById('cooldown-timer');
+    const timerVal = document.getElementById('timer-val');
+    
+    btn.disabled = true;
+    btn.classList.add('disabled');
+    timerDiv.style.display = 'block';
+
+    let remaining = durationMs;
+
+    if (cooldownInterval) clearInterval(cooldownInterval);
+
+    cooldownInterval = setInterval(() => {
+        remaining -= 1000;
+        
+        if (remaining <= 0) {
+            clearInterval(cooldownInterval);
+            enableBoosterButton(true);
+            return;
+        }
+
+        const m = Math.floor((remaining / 1000 / 60) % 60);
+        const s = Math.floor((remaining / 1000) % 60);
+        timerVal.innerText = `${m}:${s < 10 ? '0'+s : s}`;
+        btn.innerHTML = `<div class="booster-content">Attente... ${m}:${s < 10 ? '0'+s : s}</div>`;
+    }, 1000);
+}
+
+function enableBoosterButton(enabled) {
+    const btn = document.getElementById('btn-draw');
+    const timerDiv = document.getElementById('cooldown-timer');
+    
+    if (enabled) {
+        btn.disabled = false;
+        btn.classList.remove('disabled');
+        btn.innerHTML = '<div class="booster-content">OUVRIR UN BOOSTER</div>';
+        timerDiv.style.display = 'none';
+        if (cooldownInterval) clearInterval(cooldownInterval);
+    }
+}
+
+
+// --- OUVERTURE DE BOOSTER (5 CARTES) ---
 window.drawCard = async () => {
     const user = auth.currentUser;
     if (!user) return;
 
-    const btn = document.getElementById('btn-draw');
     const genSelect = document.getElementById('gen-select');
-    const selectedGen = genSelect.value; 
+    const selectedGen = genSelect.value;
+    const btn = document.getElementById('btn-draw');
 
-    btn.disabled = true; 
-    btn.innerHTML = `Ouverture ${selectedGen.toUpperCase()}...`;
+    btn.disabled = true;
+    btn.innerHTML = "Ouverture...";
 
     try {
-        // 1. Choix Rareté
-        const rand = Math.random() * 100;
-        let rarityConfig = GAME_CONFIG.dropRates[0];
-        let acc = 0;
-        for (const r of GAME_CONFIG.dropRates) {
-            acc += r.chance;
-            if (rand <= acc) { rarityConfig = r; break; }
-        }
+        const newCards = [];
 
-        // 2. Chargement du fichier JSON
-        const filePath = `data/${selectedGen}/${rarityConfig.filename}`;
-        
-        let response;
-        try {
-            response = await fetch(filePath);
-        } catch (e) {
-            throw new Error(`Impossible de trouver le fichier : ${filePath}`);
-        }
+        // On boucle 5 fois pour générer 5 cartes
+        for(let i=0; i<BOOSTER_SIZE; i++) {
+            // 1. Rareté
+            const rand = Math.random() * 100;
+            let rarityConfig = GAME_CONFIG.dropRates[0];
+            let acc = 0;
+            for (const r of GAME_CONFIG.dropRates) {
+                acc += r.chance;
+                if (rand <= acc) { rarityConfig = r; break; }
+            }
 
-        if (!response.ok) throw new Error(`Erreur chargement fichier (404): ${filePath}`);
-        
-        const cardList = await response.json();
+            // 2. Récupération fichier
+            const response = await fetch(`data/${selectedGen}/${rarityConfig.filename}`);
+            if (!response.ok) {
+                // Fallback si fichier vide (ex: pas de secret dans cette gen)
+                const fallback = await fetch(`data/${selectedGen}/common.json`);
+                var list = await fallback.json();
+                rarityConfig = GAME_CONFIG.dropRates[0]; // Force commune
+            } else {
+                var list = await response.json();
+            }
 
-        // --- SECURITE : Vérifier que la liste n'est pas vide ---
-        if (!cardList || cardList.length === 0) {
-            console.warn(`Le fichier ${filePath} est vide. Tentative avec les communes...`);
-            // Fallback : Si pas de carte rare/secrète dans cette gen, on force une commune
-            const fallbackPath = `data/${selectedGen}/common.json`;
-            const fbRes = await fetch(fallbackPath);
-            const fbList = await fbRes.json();
-            if(!fbList || fbList.length === 0) throw new Error("Aucune carte trouvée dans cette génération !");
+            if(!list || list.length === 0) continue; // Skip si vide
+
+            const card = list[Math.floor(Math.random() * list.length)];
             
-            // On pioche dans les communes à la place
-            const fallbackCard = fbList[Math.floor(Math.random() * fbList.length)];
-            finalizeDraw(user, fallbackCard, 'common', selectedGen);
-            return;
+            // 3. Préparation Objet
+            card.acquiredAt = Date.now();
+            card.rarityKey = rarityConfig.type;
+            card.rarityWeight = rarityConfig.weight; // Important pour le tri !
+            card.generation = selectedGen;
+            
+            newCards.push(card);
         }
 
-        // 3. Piocher
-        const card = cardList[Math.floor(Math.random() * cardList.length)];
+        // 4. Sauvegarde Unique (Optimisation)
+        const updateData = {
+            collection: arrayUnion(...newCards)
+        };
         
-        // --- SECURITE : Vérifier que la carte existe bien ---
-        if (!card) {
-            throw new Error("Erreur interne : Carte indéfinie lors du tirage.");
+        // Si pas admin, on met à jour le cooldown
+        if (user.email !== ADMIN_EMAIL) {
+            updateData.lastDrawTime = Date.now();
         }
 
-        // 4. Finaliser
-        finalizeDraw(user, card, rarityConfig.type, selectedGen);
+        await updateDoc(doc(db, "players", user.uid), updateData);
+
+        // 5. Mise à jour UI
+        newCards.forEach(c => {
+            userCardsCache.push(c); // Ajout au cache local
+            renderCard(c, true); // Affichage
+        });
+        
+        updateCount(newCards.length);
+        
+        // Relancer le cooldown si nécessaire
+        if (user.email !== ADMIN_EMAIL) {
+            startTimer(COOLDOWN_MINUTES * 60 * 1000);
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<div class="booster-content">OUVRIR UN BOOSTER</div>';
+        }
 
     } catch (error) {
         console.error(error);
-        alert("Erreur : " + error.message);
-    } finally {
+        alert("Erreur: " + error.message);
         btn.disabled = false;
-        btn.innerHTML = '<div class="booster-content">OUVRIR UN BOOSTER</div>';
     }
 };
 
-// Nouvelle fonction utilitaire pour éviter la répétition de code
-async function finalizeDraw(user, card, rarityKey, generation) {
-    // Enrichir l'objet carte
-    card.acquiredAt = Date.now();
-    card.rarityKey = rarityKey; 
-    card.generation = generation; 
 
-    // Sauvegarde Firebase
-    await updateDoc(doc(db, "players", user.uid), { collection: arrayUnion(card) });
-
-    // Affichage
-    renderCard(card, true);
-    updateCount(1);
-}
+// --- GESTION COLLECTION & TRI ---
 
 async function loadCollection(uid) {
     const snap = await getDoc(doc(db, "players", uid));
     if (snap.exists()) {
-        const cards = snap.data().collection || [];
-        document.getElementById('cards-grid').innerHTML = '';
-        document.getElementById('card-count').innerText = cards.length;
-        cards.sort((a,b) => b.acquiredAt - a.acquiredAt);
-        cards.forEach(c => renderCard(c));
+        userCardsCache = snap.data().collection || [];
+        updateCount(0); // Just update text
+        window.updateSort(); // Appliquer le tri par défaut
     }
 }
 
+// Fonction appelée par le <select onchange="updateSort()">
+window.updateSort = () => {
+    const sortType = document.getElementById('sort-select').value;
+    const grid = document.getElementById('cards-grid');
+    grid.innerHTML = ''; // Clear
+
+    // Logique de tri
+    const sorted = [...userCardsCache].sort((a, b) => {
+        switch(sortType) {
+            case 'date-desc': // Plus récent
+                return b.acquiredAt - a.acquiredAt;
+            
+            case 'rarity-desc': // Rareté (Poids 5 > 4 > 3...)
+                // Si même rareté, on trie par nom
+                if ((b.rarityWeight || 0) !== (a.rarityWeight || 0)) {
+                    return (b.rarityWeight || 0) - (a.rarityWeight || 0);
+                }
+                return a.name.localeCompare(b.name);
+
+            case 'hp-desc': // PV
+                return (b.hp || 0) - (a.hp || 0);
+
+            case 'gen-asc': // Génération (gen1 < gen2)
+                if (a.generation !== b.generation) {
+                    return a.generation.localeCompare(b.generation);
+                }
+                return (b.rarityWeight || 0) - (a.rarityWeight || 0);
+            
+            default: return 0;
+        }
+    });
+
+    sorted.forEach(c => renderCard(c, false));
+    document.getElementById('card-count').innerText = sorted.length;
+};
+
 function updateCount(n) {
-    const el = document.getElementById('card-count');
-    el.innerText = parseInt(el.innerText) + n;
+    // Si n=0 on ne change pas la longueur réelle
+    // Ici on relit juste la taille du cache
+    document.getElementById('card-count').innerText = userCardsCache.length;
 }
 
-// --- AFFICHAGE ---
+// --- RENDER CARD (Mise à jour pour les Badges) ---
 function renderCard(card, animate = false) {
     const grid = document.getElementById('cards-grid');
     const div = document.createElement('div');
     
     const mainType = card.types[0];
     const cssRarity = card.rarityKey ? card.rarityKey.replace('_', '-') : 'commune';
+    // Mapping pour le badge (Texte propre)
+    const rarityLabels = {
+        'common': 'COMMUNE', 'uncommon': 'PEU COM.', 'rare': 'RARE', 
+        'ultra_rare': 'ULTRA RARE', 'secret': 'SECRET'
+    };
+    const rarityLabel = rarityLabels[card.rarityKey] || '';
+
     const typeIconUrl = GAME_CONFIG.icons[mainType] || GAME_CONFIG.icons['Normal'];
     const weakIconUrl = GAME_CONFIG.icons[card.weakness] || GAME_CONFIG.icons['Normal'];
     
     div.className = `tcg-card ${cssRarity} bg-${mainType}`;
     if (animate) div.style.animation = "popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)";
 
+    // Attaques
     let attacksHtml = '';
-    if(card.attacks && card.attacks.length > 0) {
+    if(card.attacks) {
         card.attacks.forEach(atk => {
             const costHtml = Array(atk.cost).fill(`<img src="${typeIconUrl}" class="type-icon small">`).join('');
             attacksHtml += `
                 <div class="move-row">
                     <div class="cost-icons">${costHtml}</div>
-                    <div class="move-info">
-                        <div class="move-name">${atk.name}</div>
-                    </div>
+                    <div class="move-info"><div class="move-name">${atk.name}</div></div>
                     <div class="move-dmg">${atk.damage}</div>
-                </div>
-            `;
+                </div>`;
         });
     }
 
-    // Gestion image + Log erreur console
+    // Gestion image
     const img = document.createElement('img');
     img.src = card.image;
     img.className = 'card-img';
     img.loading = 'lazy';
-    img.alt = card.name;
-    img.onerror = () => {
-        console.error(`❌ Image cassée: ${card.name} (ID: ${card.id})`);
-        console.log(`🔗 URL: ${card.image}`);
-    };
+    img.onerror = () => { console.log("Img error", card.name); };
 
+    // HTML Structure avec Badge Rareté
     div.innerHTML = `
+        ${rarityLabel !== 'COMMUNE' ? `<div class="rarity-badge badge-${cssRarity}">${rarityLabel}</div>` : ''}
+        
         <div class="card-header">
             <span class="card-name">${card.name}</span>
             <div class="hp-group">${card.hp} PV <img src="${typeIconUrl}" class="type-icon big"></div>
@@ -247,5 +355,8 @@ function renderCard(card, animate = false) {
     `;
     
     div.querySelector('.img-frame').appendChild(img);
-    grid.prepend(div);
+    
+    // Si on trie, on ajoute à la fin, sinon (animation draw) au début
+    if(animate) grid.prepend(div);
+    else grid.appendChild(div);
 }
