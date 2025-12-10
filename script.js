@@ -1,11 +1,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, updateDoc, arrayUnion, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, setDoc, updateDoc, arrayUnion, getDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// --- 1. CONFIGURATION ---
 const ADMIN_EMAIL = "bryan.drouet24@gmail.com"; 
 const COOLDOWN_MINUTES = 5; 
 
-// CONFIG FIREBASE (Gardée telle quelle)
+// TA CONFIG FIREBASE (Celle que tu m'as donnée)
 const firebaseConfig = {
     apiKey: "AIzaSyBdtS508E3KBTZHfOTb7kl-XDc9vVn3oZI",
     authDomain: "tcgp-27e34.firebaseapp.com",
@@ -20,7 +21,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// Liste des Gens
+// Liste des Générations
 const GEN_LIST = [
     { id: "gen1", name: "Gen 1 - Kanto" },
     { id: "gen2", name: "Gen 2 - Johto" },
@@ -39,6 +40,7 @@ const GAME_CONFIG = {
         { type: 'ultra_rare', chance: 5,   filename: 'ultra_rare.json', label: "Ultra Rare", weight: 4 },
         { type: 'secret',     chance: 1,   filename: 'secret.json', label: "SECRÈTE", weight: 5 }
     ],
+    // Icônes (Noms simplifiés en minuscules comme demandé)
     icons: {
         Fire: 'icons/fire.svg', Water: 'icons/water.svg', Grass: 'icons/grass.svg',
         Electric: 'icons/electric.svg', Psychic: 'icons/psychic.svg', Fighting: 'icons/fighting.svg',
@@ -50,17 +52,17 @@ const GAME_CONFIG = {
     }
 };
 
-// --- VARIABLES GLOBALES (C'est ici qu'il manquait currentGenData !) ---
-let userCardsCache = []; 
-let userCollection = [];
-let currentGenData = []; // <--- CELLE-CI ÉTAIT MANQUANTE
+// --- VARIABLES GLOBALES (Cruciales pour éviter les erreurs "undefined") ---
+let userCollection = []; // Cartes possédées par le joueur
+let currentGenData = []; // Toutes les cartes possibles de la gen active
 let cooldownInterval = null;
-let currentUserRole = 'player'; 
+let tempBoosterCards = []; // Cartes en cours d'ouverture
 
-// --- INITIALISATION ---
+// --- INITIALISATION AU CHARGEMENT DE LA PAGE ---
 window.onload = () => {
     const select = document.getElementById('gen-select');
     if(select) {
+        // On inverse la liste pour avoir Gen 7 en premier
         [...GEN_LIST].reverse().forEach(gen => {
             const opt = document.createElement('option');
             opt.value = gen.id;
@@ -70,7 +72,7 @@ window.onload = () => {
     }
 };
 
-// GESTION POPUP
+// --- GESTION POPUP ---
 window.showPopup = (title, msg) => {
     const el = document.getElementById('custom-popup-overlay');
     if(el) {
@@ -78,88 +80,124 @@ window.showPopup = (title, msg) => {
         document.getElementById('popup-msg').innerText = msg;
         el.style.display = 'flex';
     } else {
-        alert(title + ": " + msg);
+        alert(title + "\n" + msg);
     }
 };
-window.closePopup = () => { document.getElementById('custom-popup-overlay').style.display = 'none'; };
+window.closePopup = () => { 
+    const el = document.getElementById('custom-popup-overlay');
+    if(el) el.style.display = 'none'; 
+};
 
-// AUTH
+// --- AUTHENTIFICATION ---
 onAuthStateChanged(auth, async (user) => {
     const loader = document.getElementById('global-loader');
+    
     if (user) {
+        // Connecté
         document.getElementById('auth-overlay').style.display = 'none';
         document.getElementById('game-app').style.display = 'block';
         document.getElementById('user-display').innerText = user.email.split('@')[0];
         
-        // Check Role via BDD
-        const snap = await getDoc(doc(db, "players", user.uid));
-        if(snap.exists()) {
-             currentUserRole = snap.data().role || 'player';
-        }
+        // Vérif Admin (Basique sur email)
+        const isAdmin = (user.email === ADMIN_EMAIL);
+        const adminLink = document.getElementById('admin-link-container');
+        if(adminLink) adminLink.style.display = isAdmin ? 'block' : 'none';
 
-        const isAdmin = (currentUserRole === 'admin');
-        const link = document.getElementById('admin-link-container');
-        if(link) link.style.display = isAdmin ? 'block' : 'none';
+        // Check Notifications (Visuel uniquement)
+        updateBellIcon();
 
-        checkNotificationStatus();
+        // 1. Charger la collection
         await fetchUserCollection(user.uid);
+        
+        // 2. Charger le classeur (Gen par défaut)
         await changeGen(); 
 
+        // 3. Vérifier le Cooldown
         if (!isAdmin) await checkCooldown(user.uid);
         else enableBoosterButton(true);
 
+        // Fin du chargement
         if(loader) loader.style.display = 'none';
+
     } else {
+        // Déconnecté
         document.getElementById('game-app').style.display = 'none';
         document.getElementById('auth-overlay').style.display = 'flex';
+        if(cooldownInterval) clearInterval(cooldownInterval);
         if(loader) loader.style.display = 'none';
     }
 });
 
+// Récupérer la collection depuis Firebase
 async function fetchUserCollection(uid) {
-    const snap = await getDoc(doc(db, "players", uid));
-    if (snap.exists()) {
-        userCollection = snap.data().collection || [];
-        updateCount();
+    try {
+        const snap = await getDoc(doc(db, "players", uid));
+        if (snap.exists()) {
+            userCollection = snap.data().collection || [];
+            const countEl = document.getElementById('card-count');
+            if(countEl) countEl.innerText = userCollection.length;
+        }
+    } catch (e) {
+        console.error("Erreur chargement collection:", e);
     }
 }
 
-// CHANGEMENT GEN
+// --- LOGIQUE CLASSEUR (BINDER) ---
 window.changeGen = async () => {
-    const gen = document.getElementById('gen-select').value;
-    const grid = document.getElementById('cards-grid');
-    grid.innerHTML = '<div style="color:white; text-align:center; width:100%;">Chargement du classeur...</div>';
-
-    currentGenData = []; // MAINTENANT ÇA MARCHE CAR DÉCLARÉ EN HAUT
+    const genSelect = document.getElementById('gen-select');
+    if(!genSelect) return;
     
+    const gen = genSelect.value;
+    const grid = document.getElementById('cards-grid');
+    grid.innerHTML = '<div style="color:white; text-align:center; width:100%; padding:20px;">Chargement du classeur...</div>';
+
+    currentGenData = []; // Reset des données locales
+    
+    // On charge tous les JSONs de la génération
     for (const rate of GAME_CONFIG.dropRates) {
         try {
             const res = await fetch(`data/${gen}/${rate.filename}`);
             if(res.ok) {
                 const list = await res.json();
+                // On attache la rareté à chaque carte pour l'affichage
                 list.forEach(c => c.rarityKey = rate.type);
                 currentGenData.push(...list);
             }
-        } catch(e) {}
+        } catch(e) {
+            // Ignorer si un fichier manque
+        }
     }
+
+    // Tri par ID croissant (1, 2, 3...)
     currentGenData.sort((a,b) => a.id - b.id);
+    
     renderBinder();
 };
 
 function renderBinder() {
     const grid = document.getElementById('cards-grid');
     grid.innerHTML = '';
-    const searchTerm = document.getElementById('search-input').value.toLowerCase();
+    
+    const searchInput = document.getElementById('search-input');
+    const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
 
     currentGenData.forEach(cardRef => {
+        // Filtre Recherche
         if(searchTerm && !cardRef.name.toLowerCase().includes(searchTerm)) return;
+
+        // On regarde si le joueur a cette carte (par ID)
         const ownedCopies = userCollection.filter(c => c.id === cardRef.id).length;
         
         if (ownedCopies > 0) {
+            // --- CARTE POSSÉDÉE ---
+            // On prend la première copie pour avoir les infos complètes
             const userCard = userCollection.find(c => c.id === cardRef.id);
-            // On s'assure de l'objet pour l'affichage
+            // On force la rareté correcte (au cas où)
             const cardToRender = { ...userCard, rarityKey: cardRef.rarityKey };
+            
             const el = createCardElement(cardToRender);
+            
+            // Badge quantité (si > 1)
             if(ownedCopies > 1) {
                 const badge = document.createElement('div');
                 badge.className = 'card-quantity';
@@ -168,57 +206,94 @@ function renderBinder() {
             }
             grid.appendChild(el);
         } else {
+            // --- CARTE MANQUANTE (PLACEHOLDER) ---
+            // On ne montre PAS l'emplacement des secrètes
             if (cardRef.rarityKey === 'secret') return;
+
             const el = document.createElement('div');
             el.className = 'card-placeholder';
-            el.innerHTML = `<div class="placeholder-id">#${cardRef.id}</div><div class="placeholder-text">???</div>`;
+            el.innerHTML = `
+                <div class="placeholder-id">#${cardRef.id}</div>
+                <div class="placeholder-text">???</div>
+            `;
             grid.appendChild(el);
         }
     });
 }
 
-window.filterBinder = () => { renderBinder(); };
+// Fonction appelée par la barre de recherche
+window.filterBinder = () => {
+    renderBinder();
+};
 
+// Création du HTML d'une carte
 function createCardElement(card) {
     const div = document.createElement('div');
-    const mainType = card.types[0];
+    const mainType = card.types ? card.types[0] : 'Normal';
     const cssRarity = card.rarityKey ? card.rarityKey.replace('_', '-') : 'commune';
+    
     const labels = {'common':'COMMUNE', 'uncommon':'PEU COM.', 'rare':'RARE', 'ultra_rare':'ULTRA RARE', 'secret':'SECRET'};
     const label = labels[card.rarityKey] || '';
+    
     const icon = GAME_CONFIG.icons[mainType] || GAME_CONFIG.icons['Normal'];
     const weak = GAME_CONFIG.icons[card.weakness] || GAME_CONFIG.icons['Normal'];
 
     div.className = `tcg-card ${cssRarity} bg-${mainType}`;
 
     let attacks = '';
-    if(card.attacks) card.attacks.forEach(a => {
-        attacks += `<div class="move-row"><div class="cost-icons">${Array(a.cost).fill(`<img src="${icon}" class="type-icon small">`).join('')}</div><div class="move-info"><div class="move-name">${a.name}</div></div><div class="move-dmg">${a.damage}</div></div>`;
-    });
+    if(card.attacks) {
+        card.attacks.forEach(a => {
+            // Boules d'énergie
+            const costHtml = Array(a.cost).fill(`<img src="${icon}" class="type-icon small">`).join('');
+            attacks += `
+                <div class="move-row">
+                    <div class="cost-icons">${costHtml}</div>
+                    <div class="move-info"><div class="move-name">${a.name}</div></div>
+                    <div class="move-dmg">${a.damage}</div>
+                </div>`;
+        });
+    }
 
     div.innerHTML = `
         ${label !== 'COMMUNE' ? `<div class="rarity-badge badge-${cssRarity}">${label}</div>` : ''}
-        <div class="card-header"><span class="card-name">${card.name}</span><div class="hp-group">${card.hp} PV <img src="${icon}" class="type-icon big"></div></div>
-        <div class="img-frame"><img src="${card.image}" class="card-img" loading="lazy"></div>
+        <div class="card-header">
+            <span class="card-name">${card.name}</span>
+            <div class="hp-group">${card.hp} PV <img src="${icon}" class="type-icon big"></div>
+        </div>
+        <div class="img-frame">
+            <img src="${card.image}" class="card-img" loading="lazy" alt="${card.name}" 
+                 onerror="this.style.display='none'">
+        </div>
         <div class="card-body">${attacks}</div>
-        <div class="card-footer"><div class="stat-box">Faiblesse<br><img src="${weak}" class="type-icon small"></div><div class="stat-box">Résist.<br>-</div><div class="stat-box">Retraite<br>⚪</div></div>
+        <div class="card-footer">
+            <div class="stat-box">Faiblesse<br><img src="${weak}" class="type-icon small"></div>
+            <div class="stat-box">Résist.<br>-</div>
+            <div class="stat-box">Retraite<br>⚪</div>
+        </div>
     `;
     return div;
 }
 
-// OUVERTURE BOOSTER
-let tempBoosterCards = [];
+// --- OUVERTURE DE BOOSTER ---
 window.drawCard = async () => {
     const user = auth.currentUser;
     if (!user) return;
-    const isAdmin = (currentUserRole === 'admin');
-    if (!isAdmin && document.getElementById('btn-draw').disabled) return;
 
-    const gen = document.getElementById('gen-select').value;
+    const isAdmin = (user.email === ADMIN_EMAIL);
     const btn = document.getElementById('btn-draw');
-    btn.disabled = true; btn.innerText = "Génération...";
+    
+    // Sécurité anti-clic
+    if (!isAdmin && btn.disabled) return;
+
+    const genSelect = document.getElementById('gen-select');
+    const selectedGen = genSelect.value;
+
+    btn.disabled = true;
+    btn.innerHTML = "Génération...";
 
     try {
         tempBoosterCards = [];
+        // 50% de chance d'avoir 5 ou 6 cartes
         const packSize = Math.random() < 0.5 ? 5 : 6;
 
         for(let i=0; i<packSize; i++) {
@@ -230,130 +305,202 @@ window.drawCard = async () => {
                 if (rand <= acc) { rarityConfig = r; break; }
             }
 
-            const res = await fetch(`data/${gen}/${rarityConfig.filename}`);
-            if(!res.ok) continue;
-            const list = await res.json();
-            if(!list || list.length === 0) continue;
+            // Fetch du fichier correspondant
+            const res = await fetch(`data/${selectedGen}/${rarityConfig.filename}`);
+            if(!res.ok) {
+                // Si pas de fichier (ex: pas de secrète), on prend une commune
+                const fallback = await fetch(`data/${selectedGen}/common.json`);
+                var list = await fallback.json();
+                rarityConfig = GAME_CONFIG.dropRates[0];
+            } else {
+                var list = await response.json();
+                // Si le fichier est vide []
+                if(!list || list.length === 0) {
+                    const fallback = await fetch(`data/${selectedGen}/common.json`);
+                    list = await fallback.json();
+                    rarityConfig = GAME_CONFIG.dropRates[0];
+                }
+            }
 
+            // Pioche
             const card = list[Math.floor(Math.random() * list.length)];
+            
+            // Construction de l'objet sauvegardé
             card.acquiredAt = Date.now();
             card.rarityKey = rarityConfig.type;
-            card.generation = gen;
+            card.generation = selectedGen;
+            
             tempBoosterCards.push(card);
         }
 
+        // Animation d'ouverture
         openBoosterVisual();
 
+        // Sauvegarde Firebase
         const updateData = { collection: arrayUnion(...tempBoosterCards) };
         if (!isAdmin) updateData.lastDrawTime = Date.now();
         await updateDoc(doc(db, "players", user.uid), updateData);
 
+        // Ajout à la collection locale
         userCollection.push(...tempBoosterCards);
-        updateCount();
-        
+        document.getElementById('card-count').innerText = userCollection.length;
+
+        // Gestion Timer
         if (!isAdmin) startTimer(COOLDOWN_MINUTES * 60 * 1000);
-        else { btn.disabled = false; btn.innerText = "OUVRIR UN BOOSTER"; }
+        else { 
+            // Reset bouton pour l'admin (attendra la fermeture du booster)
+            // Le bouton sera réactivé dans closeBooster()
+        }
 
     } catch (e) {
-        alert("Erreur: " + e.message);
+        window.showPopup("Erreur", e.message);
         btn.disabled = false;
+        btn.innerHTML = '<div class="booster-content">OUVRIR UN BOOSTER</div>';
     }
 };
 
 function openBoosterVisual() {
     const overlay = document.getElementById('booster-overlay');
     const container = document.getElementById('booster-cards-container');
-    const btn = document.getElementById('close-booster-btn');
+    const closeBtn = document.getElementById('close-booster-btn');
+    
     container.innerHTML = '';
-    btn.style.display = 'none';
+    closeBtn.style.display = 'none';
     overlay.style.display = 'flex';
 
     let cardsRevealed = 0;
-    tempBoosterCards.forEach((card) => {
+
+    tempBoosterCards.forEach((card, index) => {
         const flipCard = document.createElement('div');
         flipCard.className = 'flip-card';
+        // Petit délai pour l'effet de distribution
+        flipCard.style.animationDelay = `${index * 0.1}s`;
+
         const inner = document.createElement('div');
         inner.className = 'flip-card-inner';
+
         const front = document.createElement('div');
-        front.className = 'flip-card-front';
+        front.className = 'flip-card-front'; // Dos (Pokeball)
+        
         const back = document.createElement('div');
-        back.className = 'flip-card-back';
+        back.className = 'flip-card-back'; // Face (Carte)
         back.appendChild(createCardElement(card));
+
         inner.appendChild(front);
         inner.appendChild(back);
         flipCard.appendChild(inner);
 
+        // Click pour retourner
         flipCard.onclick = () => {
             if(!flipCard.classList.contains('flipped')) {
                 flipCard.classList.add('flipped');
                 cardsRevealed++;
-                if(cardsRevealed === tempBoosterCards.length) btn.style.display = 'block';
+                // Si tout est révélé, on montre le bouton OK
+                if(cardsRevealed === tempBoosterCards.length) {
+                    closeBtn.style.display = 'block';
+                }
             }
         };
+
         container.appendChild(flipCard);
     });
 }
 
 window.closeBooster = () => {
     document.getElementById('booster-overlay').style.display = 'none';
+    const btn = document.getElementById('btn-draw');
+    
+    // Si admin, on réactive le bouton tout de suite
+    if (auth.currentUser && auth.currentUser.email === ADMIN_EMAIL) {
+        btn.disabled = false;
+        btn.innerHTML = '<div class="booster-content">OUVRIR UN BOOSTER</div>';
+    }
+    
+    // Recharger le binder pour montrer les nouvelles cartes
     renderBinder();
 };
 
-window.googleLogin = async () => authUser(signInWithPopup(auth, provider));
-window.signUp = async () => { authUser(createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value)); };
-window.signIn = async () => { try { await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); } catch(e) { window.showPopup("Erreur", e.message); } };
-window.logout = () => signOut(auth);
-
-async function authUser(promise) { 
-    try { 
-        const res = await promise; 
-        const ref = doc(db, "players", res.user.uid); 
-        const snap = await getDoc(ref); 
-        if (!snap.exists()) await setDoc(ref, { email: res.user.email, collection: [], lastDrawTime: 0, role: 'player' }); 
-    } catch (e) { console.error(e); } 
-}
-
+// --- COOLDOWN ---
 async function checkCooldown(uid) {
     const snap = await getDoc(doc(db, "players", uid));
     if (snap.exists()) {
         const lastDraw = snap.data().lastDrawTime || 0;
         const diff = Date.now() - lastDraw;
         const cooldownMs = COOLDOWN_MINUTES * 60 * 1000;
+        
         if (diff < cooldownMs) startTimer(cooldownMs - diff);
         else enableBoosterButton(true);
-    } else enableBoosterButton(true);
+    } else {
+        enableBoosterButton(true);
+    }
 }
 
 function startTimer(durationMs) {
     const btn = document.getElementById('btn-draw');
     const display = document.getElementById('cooldown-display');
     const val = document.getElementById('timer-val');
-    btn.disabled = true; btn.classList.add('disabled'); btn.innerHTML = `<div class="booster-content">RECHARGEMENT...</div>`; display.style.display = 'block';
+    
+    btn.disabled = true;
+    btn.classList.add('disabled');
+    btn.innerHTML = `<div class="booster-content">RECHARGEMENT...</div>`;
+    display.style.display = 'block';
+
     let remaining = durationMs;
     if (cooldownInterval) clearInterval(cooldownInterval);
+
     const tick = () => {
         remaining -= 1000;
-        if (remaining <= 0) { clearInterval(cooldownInterval); enableBoosterButton(true); return; }
-        const m = Math.floor((remaining / 1000 / 60) % 60); const s = Math.floor((remaining / 1000) % 60);
+        if (remaining <= 0) {
+            clearInterval(cooldownInterval);
+            enableBoosterButton(true);
+            return;
+        }
+        const m = Math.floor((remaining / 1000 / 60) % 60);
+        const s = Math.floor((remaining / 1000) % 60);
         val.innerText = `${m}:${s < 10 ? '0'+s : s}`;
     };
-    tick(); cooldownInterval = setInterval(tick, 1000);
+    tick();
+    cooldownInterval = setInterval(tick, 1000);
 }
 
 function enableBoosterButton(enabled) {
-    const btn = document.getElementById('btn-draw'); const display = document.getElementById('cooldown-display');
-    if (enabled) { btn.disabled = false; btn.classList.remove('disabled'); btn.innerHTML = '<div class="booster-content">OUVRIR UN BOOSTER</div>'; display.style.display = 'none'; if (cooldownInterval) clearInterval(cooldownInterval); }
+    const btn = document.getElementById('btn-draw');
+    const display = document.getElementById('cooldown-display');
+    if (enabled) {
+        btn.disabled = false;
+        btn.classList.remove('disabled');
+        btn.innerHTML = '<div class="booster-content">OUVRIR UN BOOSTER</div>';
+        display.style.display = 'none';
+        if (cooldownInterval) clearInterval(cooldownInterval);
+    }
 }
 
-function updateCount() {
-    const el = document.getElementById('card-count');
-    if(el) el.innerText = userCollection.length;
-}
-
-window.updateSort = () => {
-    // Cette fonction n'est plus utilisée dans le mode Binder pur, mais gardée pour compatibilité
-    renderBinder();
+// --- NOTIFICATIONS ---
+window.requestNotification = async () => {
+    if (!("Notification" in window)) return;
+    const permission = await Notification.requestPermission();
+    updateBellIcon();
+    if (permission === "granted") {
+        new Notification("Poké-TCG", { body: "Notifications activées !", icon: "icons/fire.svg" });
+    }
 };
 
-window.requestNotification = async () => { if (!("Notification" in window)) return; const permission = await Notification.requestPermission(); if (permission === "granted") document.getElementById('notif-bell').classList.add('bell-active'); };
-function checkNotificationStatus() { if (Notification.permission === "granted") document.getElementById('notif-bell').classList.add('bell-active'); else if (Notification.permission === "default" && !localStorage.getItem('notifAsked')) { window.requestNotification(); localStorage.setItem('notifAsked', 'true'); } }
+function updateBellIcon() {
+    const bell = document.getElementById('notif-bell');
+    if (Notification.permission === "granted") bell.classList.add('bell-active');
+    else bell.classList.remove('bell-active');
+}
+
+// --- AUTH HELPERS ---
+window.googleLogin = async () => {
+    try {
+        await signInWithPopup(auth, provider);
+    } catch(e) {
+        // En local, cette erreur peut arriver mais la connexion réussit souvent quand même
+        console.warn("Popup error:", e);
+    }
+};
+window.signUp = async () => { authUser(createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value)); };
+window.signIn = async () => { try { await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); } catch(e) { window.showPopup("Erreur", e.message); } };
+window.logout = () => signOut(auth);
+async function authUser(promise) { try { const res = await promise; const ref = doc(db, "players", res.user.uid); const snap = await getDoc(ref); if (!snap.exists()) await setDoc(ref, { email: res.user.email, collection: [], lastDrawTime: 0 }); } catch (e) { console.error(e); } }
