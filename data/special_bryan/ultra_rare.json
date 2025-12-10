@@ -1,0 +1,41 @@
+[
+  {
+    "id": 1010,
+    "name": "GP Explorer 3",
+    "hp": 0,
+    "types": ["Fire"],
+    "image": "assets/special_bryan/gp_explorer_3.png",
+    "attacks": [],
+    "description": "Troisième édition légendaire avec parcours encore plus extrêmes. La course ultime qui marque l'histoire.",
+    "weakness": "Water",
+    "resistance": null,
+    "retreatCost": 0,
+    "rarity_tag": "ultra_rare"
+  },
+  {
+    "id": 1011,
+    "name": "ZEvent 2024",
+    "hp": 0,
+    "types": ["Psychic"],
+    "image": "assets/special_bryan/zevent_2024.png",
+    "attacks": [],
+    "description": "Marathon caritatif géant réunissant les plus grands streamers francophones. Des millions collectés pour la bonne cause.",
+    "weakness": "Darkness",
+    "resistance": null,
+    "retreatCost": 0,
+    "rarity_tag": "ultra_rare"
+  },
+  {
+    "id": 1012,
+    "name": "Everest Explorer",
+    "hp": 0,
+    "types": ["Ice"],
+    "image": "assets/special_bryan/everest.png",
+    "attacks": [],
+    "description": "Ascension du toit du monde, l'Everest. Défi physique et mental ultime à 8848m d'altitude dans des conditions extrêmes.",
+    "weakness": "Fire",
+    "resistance": null,
+    "retreatCost": 0,
+    "rarity_tag": "ultra_rare"
+  }
+]

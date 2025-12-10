@@ -1,0 +1,54 @@
+[
+  {
+    "id": 1006,
+    "name": "GP Explorer 2",
+    "hp": 0,
+    "types": ["Fire"],
+    "image": "assets/special_bryan/gp_explorer_2.png",
+    "attacks": [],
+    "description": "Deuxième édition du Grand Prix Explorer. Course automobile avec épreuves et défis pour créateurs de contenu.",
+    "weakness": "Water",
+    "resistance": null,
+    "retreatCost": 0,
+    "rarity_tag": "rare"
+  },
+  {
+    "id": 1007,
+    "name": "Parc Astérix",
+    "hp": 0,
+    "types": ["Normal"],
+    "image": "assets/special_bryan/parc_asterix.png",
+    "attacks": [],
+    "description": "Parc d'attractions inspiré de l'univers d'Astérix. Manèges à sensations, spectacles et animations gauloises.",
+    "weakness": "Fighting",
+    "resistance": null,
+    "retreatCost": 0,
+    "rarity_tag": "rare"
+  },
+  {
+    "id": 1008,
+    "name": "SleeplessNight 1",
+    "hp": 0,
+    "types": ["Darkness"],
+    "image": "assets/special_bryan/sleeplessnight_1.png",
+    "attacks": [],
+    "description": "Première nuit blanche gaming marathon. Streamers et joueurs défient le sommeil pour des parties épiques.",
+    "weakness": "Psychic",
+    "resistance": null,
+    "retreatCost": 0,
+    "rarity_tag": "rare"
+  },
+  {
+    "id": 1009,
+    "name": "SleeplessNight 2",
+    "hp": 0,
+    "types": ["Darkness"],
+    "image": "assets/special_bryan/sleeplessnight_2.png",
+    "attacks": [],
+    "description": "Deuxième édition plus longue et intense. Le manque de sommeil rend les parties encore plus chaotiques.",
+    "weakness": "Psychic",
+    "resistance": null,
+    "retreatCost": 0,
+    "rarity_tag": "rare"
+  }
+]

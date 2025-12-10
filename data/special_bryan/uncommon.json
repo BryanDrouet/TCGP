@@ -1,0 +1,41 @@
+[
+  {
+    "id": 1003,
+    "name": "Puy du Fou",
+    "hp": 0,
+    "types": ["Dragon"],
+    "image": "assets/special_bryan/puy_du_fou.png",
+    "attacks": [],
+    "description": "Parc à thème spécialisé dans les spectacles historiques grandioses. Gladiateurs, vikings et mousquetaires s'affrontent.",
+    "weakness": "Normal",
+    "resistance": null,
+    "retreatCost": 0,
+    "rarity_tag": "uncommon"
+  },
+  {
+    "id": 1004,
+    "name": "Speedon 1",
+    "hp": 0,
+    "types": ["Electric"],
+    "image": "assets/special_bryan/speedon_1.png",
+    "attacks": [],
+    "description": "Première édition du tournoi speedrun caritatif. Les gamers repoussent les limites pour finir les jeux le plus vite possible.",
+    "weakness": "Ground",
+    "resistance": null,
+    "retreatCost": 0,
+    "rarity_tag": "uncommon"
+  },
+  {
+    "id": 1005,
+    "name": "Speedon 2",
+    "hp": 0,
+    "types": ["Electric"],
+    "image": "assets/special_bryan/speedon_2.png",
+    "attacks": [],
+    "description": "Deuxième édition du Speedon avec encore plus de participants et de défis chronométrés acharnés.",
+    "weakness": "Ground",
+    "resistance": null,
+    "retreatCost": 0,
+    "rarity_tag": "uncommon"
+  }
+]

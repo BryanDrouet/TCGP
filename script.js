@@ -29,16 +29,21 @@ const GEN_LIST = [
     { id: "gen4", name: "Gen 4 - Sinnoh" },
     { id: "gen5", name: "Gen 5 - Unys" },
     { id: "gen6", name: "Gen 6 - Kalos" },
-    { id: "gen7", name: "Gen 7 - Alola" }
+    { id: "gen7", name: "Gen 7 - Alola" },
+    { id: "special_bryan", name: "🌟 Pack Spécial Bryan" }
 ];
 
 const GAME_CONFIG = {
     dropRates: [
-        { type: 'common',     chance: 55,  filename: 'common.json', label: "Commune", weight: 1 },
-        { type: 'uncommon',   chance: 25,  filename: 'uncommon.json', label: "Peu Com.", weight: 2 },
+        { type: 'common',     chance: 56,  filename: 'common.json', label: "Commune", weight: 1 },
+        { type: 'uncommon',   chance: 26,  filename: 'uncommon.json', label: "Peu Com.", weight: 2 },
         { type: 'rare',       chance: 14,  filename: 'rare.json', label: "Rare", weight: 3 },
-        { type: 'ultra_rare', chance: 5,   filename: 'ultra_rare.json', label: "Ultra Rare", weight: 4 },
-        { type: 'secret',     chance: 1,   filename: 'secret.json', label: "SECRÈTE", weight: 5 }
+        { type: 'ultra_rare', chance: 3.8, filename: 'ultra_rare.json', label: "Ultra Rare", weight: 4 },
+        { type: 'secret',     chance: 0.2, filename: 'secret.json', label: "SECRÈTE", weight: 5 }
+    ],
+    dropRatesSixthCard: [ // Pour la 6ème carte : ni secrète, ni commune, ni uncommon
+        { type: 'rare',       chance: 70,  filename: 'rare.json', label: "Rare", weight: 3 },
+        { type: 'ultra_rare', chance: 30,  filename: 'ultra_rare.json', label: "Ultra Rare", weight: 4 }
     ],
     // Icônes (Noms simplifiés en minuscules comme demandé)
     icons: {
@@ -168,8 +173,14 @@ window.changeGen = async () => {
         }
     }
 
-    // Tri par ID croissant (1, 2, 3...)
+    // Tri par ID Pokédex croissant
     currentGenData.sort((a,b) => a.id - b.id);
+    
+    // Renumérotation des cartes de 1 à X pour l'affichage du classeur
+    currentGenData.forEach((card, index) => {
+        card.displayId = index + 1; // Numéro dans le classeur (1, 2, 3...)
+        card.pokedexId = card.id;   // ID Pokédex original (pour référence)
+    });
     
     renderBinder();
 };
@@ -256,7 +267,7 @@ function renderBinder() {
             const el = document.createElement('div');
             el.className = 'card-placeholder';
             el.innerHTML = `
-                <div class="placeholder-id">#${cardRef.id}</div>
+                <div class="placeholder-id">#${cardRef.displayId || cardRef.id}</div>
                 <div class="placeholder-text">???</div>
             `;
             grid.appendChild(el);
@@ -286,12 +297,16 @@ function createCardElement(card, quantity = 1) {
 
     div.className = `tcg-card ${cssRarity} bg-${mainType}`;
 
-    let attacks = '';
-    if(card.attacks) {
+    let bodyContent = '';
+    
+    // Si la carte a une description au lieu d'attaques (cartes événements)
+    if(card.description) {
+        bodyContent = `<div class="card-description">${card.description}</div>`;
+    } else if(card.attacks && card.attacks.length > 0) {
+        // Attaques normales
         card.attacks.forEach(a => {
-            // Boules d'énergie
             const costHtml = Array(a.cost).fill(`<img src="${icon}" class="type-icon small">`).join('');
-            attacks += `
+            bodyContent += `
                 <div class="move-row">
                     <div class="cost-icons">${costHtml}</div>
                     <div class="move-info"><div class="move-name">${a.name}</div></div>
@@ -299,23 +314,31 @@ function createCardElement(card, quantity = 1) {
                 </div>`;
         });
     }
+    
+    // Afficher les HP seulement si > 0
+    const hpDisplay = card.hp > 0 ? `${card.hp} PV <img src="${icon}" class="type-icon big">` : '';
+    
+    // Si c'est une carte événement (avec description), ne pas afficher le footer
+    const hasFooter = !card.description;
 
     div.innerHTML = `
         ${label && card.rarityKey !== 'common' ? `<div class="rarity-badge badge-${cssRarity}">${label}</div>` : ''}
         <div class="card-header">
             <span class="card-name">${card.name}</span>
-            <div class="hp-group">${card.hp} PV <img src="${icon}" class="type-icon big"></div>
+            <div class="hp-group">${hpDisplay}</div>
         </div>
         <div class="img-frame">
             <img src="${card.image}" class="card-img" loading="lazy" alt="${card.name}" 
                  onerror="this.style.display='none'">
         </div>
-        <div class="card-body">${attacks}</div>
+        <div class="card-body">${bodyContent}</div>
+        ${hasFooter ? `
         <div class="card-footer">
             <div class="stat-box">Faiblesse<br><img src="${weakIcon}" class="type-icon small"></div>
             <div class="stat-box">Résist.<br>${resIcon ? `<img src="${resIcon}" class="type-icon small">` : '-'}</div>
             <div class="stat-box">Retraite<br>${retreatCircles}</div>
         </div>
+        ` : ''}
     `;
     return div;
 }
@@ -346,7 +369,11 @@ window.drawCard = async () => {
             const rand = Math.random() * 100;
             let rarityConfig = GAME_CONFIG.dropRates[0];
             let acc = 0;
-            for (const r of GAME_CONFIG.dropRates) {
+            
+            // La 6ème carte (index 5) utilise des taux spéciaux
+            const rates = (i === 5) ? GAME_CONFIG.dropRatesSixthCard : GAME_CONFIG.dropRates;
+            
+            for (const r of rates) {
                 acc += r.chance;
                 if (rand <= acc) { rarityConfig = r; break; }
             }

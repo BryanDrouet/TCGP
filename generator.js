@@ -1,38 +1,13 @@
-const GENS = [
-    { id: "gen1", name: "Gen 1 (Kanto)", start: 1, end: 151 },
-    { id: "gen2", name: "Gen 2 (Johto)", start: 152, end: 251 },
-    { id: "gen3", name: "Gen 3 (Hoenn)", start: 252, end: 386 },
-    { id: "gen4", name: "Gen 4 (Sinnoh)", start: 387, end: 493 },
-    { id: "gen5", name: "Gen 5 (Unys)", start: 494, end: 649 },
-    { id: "gen6", name: "Gen 6 (Kalos)", start: 650, end: 721 },
-    { id: "gen7", name: "Gen 7 (Alola)", start: 722, end: 809 }
-];
+// Génération automatique des ID
+const GEN_COUNTS = [151, 100, 135, 107, 156, 72, 88];
+let GENS = [];
+let currentId = 1;
+GEN_COUNTS.forEach((count, index) => {
+    GENS.push({ id: `gen${index + 1}`, name: `Gen ${index + 1}`, start: currentId, end: currentId + count - 1 });
+    currentId += count;
+});
 
-const TYPE_TRANSLATION = {
-    "Fire": "Fire", "Water": "Water", "Grass": "Grass", "Electric": "Electric",
-    "Psychic": "Psychic", "Fighting": "Fighting", "Dark": "Darkness", "Steel": "Metal",
-    "Fairy": "Fairy", "Dragon": "Dragon", "Normal": "Normal", "Ground": "Ground",
-    "Flying": "Flying", "Bug": "Bug", "Rock": "Rock", "Ghost": "Ghost",
-    "Poison": "Poison", "Ice": "Ice"
-};
-
-const TYPE_WEAKNESSES = {
-    Fire: "Water", Water: "Electric", Grass: "Fire",
-    Electric: "Fighting", Psychic: "Darkness", Fighting: "Psychic",
-    Darkness: "Fighting", Metal: "Fire", Fairy: "Metal",
-    Dragon: "Fairy", Ice: "Fire", Ground: "Water",
-    Flying: "Electric", Bug: "Fire", Rock: "Grass",
-    Ghost: "Darkness", Poison: "Psychic", Normal: "Fighting"
-};
-
-const TYPE_RESISTANCES = {
-    Fire: "Grass", Water: "Fire", Grass: "Water",
-    Electric: "Flying", Psychic: "Fighting", Fighting: "Bug",
-    Darkness: "Psychic", Metal: "Grass", Fairy: "Darkness",
-    Dragon: "Fire", Ice: "Water", Ground: "Electric",
-    Flying: "Fighting", Bug: "Grass", Rock: "Fire",
-    Ghost: "Bug", Poison: "Grass", Normal: "Ghost"
-};
+const TYPE_TRANSLATION = { "Fire":"Fire", "Water":"Water", "Grass":"Grass", "Electric":"Electric", "Psychic":"Psychic", "Fighting":"Fighting", "Dark":"Darkness", "Steel":"Metal", "Fairy":"Fairy", "Dragon":"Dragon", "Normal":"Normal", "Ground":"Ground", "Flying":"Flying", "Bug":"Bug", "Rock":"Rock", "Ghost":"Ghost", "Poison":"Poison", "Ice":"Ice" };
 
 const ui = {
     toast: document.getElementById('dl-toast'),
@@ -41,82 +16,71 @@ const ui = {
     bar: document.getElementById('toast-bar'),
     show: () => { if(ui.toast) ui.toast.style.display = 'block'; },
     hide: () => { if(ui.toast) setTimeout(() => ui.toast.style.display = 'none', 5000); },
-    update: (title, message, percent) => {
-        if(ui.title) ui.title.innerText = title;
-        if(ui.msg) ui.msg.innerText = message;
-        if(ui.bar) ui.bar.style.width = percent + "%";
-    }
+    update: (title, message, percent) => { if(ui.title) ui.title.innerText = title; if(ui.msg) ui.msg.innerText = message; if(ui.bar) ui.bar.style.width = percent + "%"; }
 };
 
 window.downloadAllGensZip = async () => {
-    console.clear();
-    const btn = document.querySelector('.btn-admin');
-    if(btn) btn.disabled = true;
-    ui.show();
-    ui.update("Connexion", "Récupération données...", 10);
+    const btn = document.querySelector('.btn-admin'); if(btn) btn.disabled = true;
+    ui.show(); ui.update("Start", "Download Data...", 10);
 
     try {
         const zip = new JSZip();
         const rootFolder = zip.folder("data");
+        const res = await fetch('https://raw.githubusercontent.com/fanzeyi/pokemon.json/master/pokedex.json');
+        if (!res.ok) throw new Error("Err");
+        const rawData = await res.json();
 
-        const response = await fetch('https://raw.githubusercontent.com/fanzeyi/pokemon.json/master/pokedex.json');
-        if (!response.ok) throw new Error("Erreur GitHub");
-        const rawData = await response.json();
+        let allSpecialCards = []; // Pour le pack de Bryan
 
-        // Vérification des données
-        if(!rawData || rawData.length === 0) throw new Error("Données vides reçues !");
-
-        let totalCards = 0;
-
+        // 1. GENS CLASSIQUES
         for (let i = 0; i < GENS.length; i++) {
             const gen = GENS[i];
-            const percent = 20 + Math.floor(((i + 1) / GENS.length) * 60);
-            ui.update(gen.name, `Génération des fichiers...`, percent);
+            const percent = 20 + Math.floor(((i + 1) / GENS.length) * 50);
+            ui.update(gen.name, `Processing...`, percent);
 
             const genData = rawData.filter(p => p.id >= gen.start && p.id <= gen.end);
+            const processed = genData.map(p => processPokemon(p));
             
-            if(genData.length > 0) {
-                const processedCards = genData.map(p => processPokemon(p));
-                totalCards += processedCards.length;
+            // On garde les cartes fortes pour le pack spécial
+            processed.forEach(c => {
+                if (c.rarity_tag === 'ultra_rare' || c.rarity_tag === 'secret' || c.rarity_tag === 'rare') {
+                    allSpecialCards.push(c);
+                }
+            });
 
-                const genFolder = rootFolder.folder(gen.id);
-                
-                // On s'assure d'écrire les fichiers même vides pour éviter les erreurs 404
-                saveJsonToZip(genFolder, processedCards, 'common', 'common.json');
-                saveJsonToZip(genFolder, processedCards, 'uncommon', 'uncommon.json');
-                saveJsonToZip(genFolder, processedCards, 'rare', 'rare.json');
-                saveJsonToZip(genFolder, processedCards, 'ultra_rare', 'ultra_rare.json');
-                saveJsonToZip(genFolder, processedCards, 'secret', 'secret.json');
-            }
+            if(processed.length > 0) saveGenFolder(rootFolder, gen.id, processed);
         }
 
-        ui.update("Compression", "Création ZIP...", 90);
-        const content = await zip.generateAsync({ type: "blob" });
-        saveAs(content, "tcg-fixed-data.zip");
-        ui.update("Terminé !", "Téléchargement lancé.", 100);
-        ui.hide();
+        // 2. PACK SPÉCIAL BRYAN
+        ui.update("Pack Spécial", "Compilation...", 80);
+        const specialFolder = rootFolder.folder("special_bryan");
+        saveJsonToZip(specialFolder, allSpecialCards, 'common', 'common.json'); // Vide
+        saveJsonToZip(specialFolder, allSpecialCards, 'uncommon', 'uncommon.json'); // Vide
+        // On met tout dans rare/ultra/secret pour ce pack
+        saveJsonToZip(specialFolder, allSpecialCards, 'rare', 'rare.json');
+        saveJsonToZip(specialFolder, allSpecialCards, 'ultra_rare', 'ultra_rare.json');
+        saveJsonToZip(specialFolder, allSpecialCards, 'secret', 'secret.json');
 
-    } catch (e) {
-        console.error(e);
-        ui.update("Erreur", e.message, 0);
-        alert("Erreur : " + e.message);
-    } finally {
-        if(btn) btn.disabled = false;
-    }
+        ui.update("Zip", "Compressing...", 90);
+        const content = await zip.generateAsync({ type: "blob" });
+        saveAs(content, "tcg-data-final.zip");
+        ui.update("Done", "OK", 100); ui.hide();
+
+    } catch (e) { alert("Err: " + e.message); } finally { if(btn) btn.disabled = false; }
 };
 
 function processPokemon(p) {
-    // CORRECTION MAJEURE ICI : Accès aux propriétés avec espaces
     const stats = p.base;
     const hp = stats["HP"] * 2; 
     const atk = stats["Attack"];
     const def = stats["Defense"];
-    const spatk = stats["Sp. Attack"]; // C'était ça le bug (le point et l'espace)
+    const spatk = stats["Sp. Attack"];
     const spdef = stats["Sp. Defense"];
     const spd = stats["Speed"];
-
-    const typeEn = p.type[0]; // Anglais direct depuis le JSON
-
+    const totalStats = stats["HP"] + atk + def + spatk + spdef + spd;
+    
+    const typeEn = p.type[0];
+    
     // Noms d'attaques dynamiques basés sur le type
     const attackNames = {
         Fire: ["Flammèche", "Lance-Flammes"],
@@ -145,14 +109,25 @@ function processPokemon(p) {
         { name: typeAttacks[1], cost: Math.min(3, Math.floor(spatk / 40) + 2), damage: Math.floor((atk + spatk) / 2.5) + 20 }
     ];
 
-    // Calcul du total des stats correctement
-    const totalStats = stats["HP"] + atk + def + spatk + spdef + spd;
-    let rarity = calculateRarity(p.id, totalStats);
-
     // Faiblesse, résistance et retraite dynamiques
     const weakness = TYPE_WEAKNESSES[typeEn] || "Normal";
     const resistance = TYPE_RESISTANCES[typeEn] || null;
-    const retreatCost = Math.max(0, Math.min(3, Math.floor((totalStats - 200) / 120))); // 0-3 selon les stats
+    const retreatCost = Math.max(0, Math.min(3, Math.floor((totalStats - 200) / 120)));
+
+    // Calcul de la rareté
+    let rarity = "common";
+    if (totalStats >= 580) rarity = "secret"; 
+    else if (totalStats >= 500) rarity = "ultra_rare";
+    else if (totalStats >= 400) rarity = "rare";
+    else if (totalStats >= 300) rarity = "uncommon";
+
+    // Exceptions manuelles (Starters)
+    const startersBase = [1,4,7, 152,155,158, 252,255,258, 387,390,393, 495,498,501, 650,653,656, 722,725,728];
+    if (startersBase.includes(p.id)) rarity = "uncommon";
+    const startersMax = [3,6,9, 154,157,160, 254,257,260, 389,392,395, 497,500,503, 652,655,658, 724,727,730];
+    if (startersMax.includes(p.id)) rarity = "ultra_rare";
+    // Légendaires iconiques
+    if ([150, 151, 249, 250, 251, 382, 383, 384].includes(p.id)) rarity = "secret";
 
     return {
         id: p.id,
@@ -168,24 +143,13 @@ function processPokemon(p) {
     };
 }
 
-function calculateRarity(id, totalStats) {
-    let rarity = "common";
-    
-    // Seuils ajustés pour être sûr d'avoir des rares
-    if (totalStats >= 580) rarity = "secret";        // Légendaires majeurs
-    else if (totalStats >= 500) rarity = "ultra_rare"; // Très forts / Starters finaux
-    else if (totalStats >= 400) rarity = "rare";       // Évolutions
-    else if (totalStats >= 300) rarity = "uncommon";   // Bases fortes
-
-    // Exceptions manuelles (Starters)
-    // Base (Bulbizarre...) -> Peu commune
-    if ([1,4,7, 152,155,158, 252,255,258, 387,390,393, 495,498,501, 650,653,656, 722,725,728].includes(id)) rarity = "uncommon";
-    // Finale (Florizarre...) -> Ultra Rare (Pour être sûr qu'ils ne soient pas justes "Rare")
-    if ([3,6,9, 154,157,160, 254,257,260, 389,392,395, 497,500,503, 652,655,658, 724,727,730].includes(id)) rarity = "ultra_rare";
-    // Légendaires iconiques -> Secret
-    if ([150, 151, 249, 250, 251, 382, 383, 384].includes(id)) rarity = "secret";
-
-    return rarity;
+function saveGenFolder(root, id, cards) {
+    const f = root.folder(id);
+    saveJsonToZip(f, cards, 'common', 'common.json');
+    saveJsonToZip(f, cards, 'uncommon', 'uncommon.json');
+    saveJsonToZip(f, cards, 'rare', 'rare.json');
+    saveJsonToZip(f, cards, 'ultra_rare', 'ultra_rare.json');
+    saveJsonToZip(f, cards, 'secret', 'secret.json');
 }
 
 function saveJsonToZip(folder, allCards, tag, filename) {

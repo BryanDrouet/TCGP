@@ -2,10 +2,13 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> <title>Poké-TCG Ultimate</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Poké-TCG Ultimate</title>
+    
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 </head>
@@ -13,13 +16,12 @@
 
     <div id="global-loader">
         <div class="pokeball-spinner"><div class="pokeball-top"></div><div class="pokeball-bottom"></div><div class="pokeball-center"></div></div>
-        <h2>Chargement du Monde...</h2>
+        <h2>Chargement...</h2>
     </div>
 
     <div id="booster-overlay" style="display:none;">
         <h2 class="opening-title">CLIQUEZ POUR RÉVÉLER !</h2>
-        <div id="booster-cards-container">
-            </div>
+        <div id="booster-cards-container"></div>
         <button id="close-booster-btn" onclick="closeBooster()" style="display:none;">AJOUTER À LA COLLECTION</button>
     </div>
 
@@ -28,16 +30,15 @@
             <img src="https://upload.wikimedia.org/wikipedia/commons/9/98/International_Pok%C3%A9mon_logo.svg" alt="Logo" class="logo-img">
             <h2>Espace Dresseur</h2>
             <button onclick="googleLogin()" class="btn-google">
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> Connexion Google
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" alt="G"> Connexion Google
             </button>
             <div class="divider">OU</div>
-            
             <form onsubmit="event.preventDefault(); signIn();">
-                <input type="email" id="email" placeholder="Email" autocomplete="username" aria-label="Email">
+                <input type="email" id="email" placeholder="Email" autocomplete="username" aria-label="Adresse Email">
                 <input type="password" id="password" placeholder="Mot de passe" autocomplete="current-password" aria-label="Mot de passe">
                 <div class="btn-group">
                     <button type="submit" class="btn-secondary">Connexion</button>
-                    <button type="button" onclick="signUp()" class="btn-primary">Créer compte</button>
+                    <button type="button" onclick="signUp()" class="btn-primary">Créer</button>
                 </div>
             </form>
             <p id="auth-msg"></p>
@@ -48,7 +49,7 @@
         <nav>
             <div class="nav-logo">TCG <span class="version">Binder</span></div>
             <div class="player-stats">
-                <span id="notif-bell" class="notification-bell" onclick="requestNotification()">🔔</span>
+                <span id="notif-bell" class="notification-bell" onclick="requestNotification()" title="Activer les notifications">🔔</span>
                 <span class="user-pill">👤 <span id="user-display">...</span></span>
                 <span class="user-pill">🃏 <span id="card-count">0</span></span>
                 <button onclick="logout()" class="btn-logout">Sortir</button>
@@ -56,10 +57,11 @@
         </nav>
 
         <div class="action-area">
+            
             <div class="custom-select-wrapper">
-                <label>CHOIX DU CLASSEUR</label>
+                <label for="gen-select">CHOIX DU CLASSEUR</label>
                 <div class="select-container">
-                    <select id="gen-select" onchange="changeGen()"></select>
+                    <select id="gen-select" onchange="changeGen()" aria-label="Choisir la génération"></select>
                     <span class="select-arrow">▼</span>
                 </div>
             </div>
@@ -71,31 +73,33 @@
             <div id="cooldown-display" style="display:none;">
                 ⏳ Prochain dans : <span id="timer-val">00:00</span>
             </div>
-
+            
             <div class="toolbar">
                 <div class="search-container">
                     <span class="search-icon">🔍</span>
-                    <input type="text" id="search-input" placeholder="Filtrer..." oninput="filterBinder()" aria-label="Rechercher une carte">
+                    <input type="text" id="search-input" placeholder="Rechercher..." oninput="filterBinder()" aria-label="Rechercher une carte">
                 </div>
+                
                 <div class="sort-container">
-                    <select id="sort-select" onchange="filterBinder()">
-                        <option value="id">Par Numéro</option>
-                        <option value="name">Alphabétique</option>
-                        <option value="rarity-desc">Du Plus Rare au Moins</option>
-                        <option value="rarity-asc">Du Moins Rare au Plus</option>
-                        <option value="owned-desc">Du Plus Possédé au Moins</option>
-                        <option value="owned-asc">Du Moins Possédé au Plus</option>
+                    <select id="sort-select" onchange="filterBinder()" aria-label="Trier par">
+                        <option value="id"># Numéro</option>
+                        <option value="name">🔤 Nom</option>
+                        <option value="rarity-desc">💎 + Rares</option>
+                        <option value="rarity-asc">💎 - Rares</option>
+                        <option value="owned-desc">✅ Possédées</option>
+                        <option value="owned-asc">❌ Manquantes</option>
                     </select>
                     <span class="sort-arrow">▼</span>
                 </div>
-                <div class="filter-checkboxes">
-                    <label class="checkbox-label">
+
+                <div class="filter-toggles">
+                    <label class="toggle-btn">
                         <input type="checkbox" id="show-owned" checked onchange="filterBinder()">
-                        <span>Possédées</span>
+                        <span class="toggle-visual">✅ Possédées</span>
                     </label>
-                    <label class="checkbox-label">
+                    <label class="toggle-btn">
                         <input type="checkbox" id="show-missing" checked onchange="filterBinder()">
-                        <span>Manquantes</span>
+                        <span class="toggle-visual">❌ Manquantes</span>
                     </label>
                 </div>
             </div>

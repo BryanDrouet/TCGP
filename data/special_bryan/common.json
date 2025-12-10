@@ -1,0 +1,28 @@
+[
+  {
+    "id": 1001,
+    "name": "DTR Fight",
+    "hp": 0,
+    "types": ["Fighting"],
+    "image": "assets/special_bryan/dtr_fight.png",
+    "attacks": [],
+    "description": "Affrontement verbal entre rappeurs français. Clash, punchlines et lyrical combat pour déterminer qui domine la scène.",
+    "weakness": "Psychic",
+    "resistance": null,
+    "retreatCost": 0,
+    "rarity_tag": "common"
+  },
+  {
+    "id": 1002,
+    "name": "Carnaval de Cholet",
+    "hp": 0,
+    "types": ["Fairy"],
+    "image": "assets/special_bryan/carnaval_cholet.png",
+    "attacks": [],
+    "description": "Fête annuelle célèbre de Cholet avec ses chars décorés, ses confettis et son ambiance festive unique.",
+    "weakness": "Normal",
+    "resistance": null,
+    "retreatCost": 0,
+    "rarity_tag": "common"
+  }
+]
