@@ -16,6 +16,24 @@ const TYPE_TRANSLATION = {
     "Poison": "Poison", "Ice": "Ice"
 };
 
+const TYPE_WEAKNESSES = {
+    Fire: "Water", Water: "Electric", Grass: "Fire",
+    Electric: "Fighting", Psychic: "Darkness", Fighting: "Psychic",
+    Darkness: "Fighting", Metal: "Fire", Fairy: "Metal",
+    Dragon: "Fairy", Ice: "Fire", Ground: "Water",
+    Flying: "Electric", Bug: "Fire", Rock: "Grass",
+    Ghost: "Darkness", Poison: "Psychic", Normal: "Fighting"
+};
+
+const TYPE_RESISTANCES = {
+    Fire: "Grass", Water: "Fire", Grass: "Water",
+    Electric: "Flying", Psychic: "Fighting", Fighting: "Bug",
+    Darkness: "Psychic", Metal: "Grass", Fairy: "Darkness",
+    Dragon: "Fire", Ice: "Water", Ground: "Electric",
+    Flying: "Fighting", Bug: "Grass", Rock: "Fire",
+    Ghost: "Bug", Poison: "Grass", Normal: "Ghost"
+};
+
 const ui = {
     toast: document.getElementById('dl-toast'),
     title: document.getElementById('toast-title'),
@@ -99,14 +117,42 @@ function processPokemon(p) {
 
     const typeEn = p.type[0]; // Anglais direct depuis le JSON
 
+    // Noms d'attaques dynamiques basés sur le type
+    const attackNames = {
+        Fire: ["Flammèche", "Lance-Flammes"],
+        Water: ["Pistolet à O", "Hydrocanon"],
+        Grass: ["Fouet Lianes", "Tranch'Herbe"],
+        Electric: ["Éclair", "Tonnerre"],
+        Psychic: ["Choc Mental", "Psyko"],
+        Fighting: ["Poing-Karaté", "Poing Boost"],
+        Dark: ["Morsure", "Feinte"],
+        Steel: ["Griffe Acier", "Tête de Fer"],
+        Fairy: ["Câlinerie", "Éclat Magique"],
+        Dragon: ["Dracogriffe", "Draco-Rage"],
+        Ice: ["Poudreuse", "Laser Glace"],
+        Ground: ["Coud'Boue", "Séisme"],
+        Flying: ["Vive-Attaque", "Aéropique"],
+        Bug: ["Piqûre", "Plaie-Croix"],
+        Rock: ["Jet-Pierres", "Éboulement"],
+        Ghost: ["Léchouille", "Ball'Ombre"],
+        Poison: ["Dard-Venin", "Détritus"],
+        Normal: ["Charge", "Coup d'Boule"]
+    };
+
+    const typeAttacks = attackNames[typeEn] || ["Attaque", "Frappe"];
     const attacks = [
-        { name: "Attaque Rapide", cost: 1, damage: 10 },
-        { name: "Coup Spécial", cost: 3, damage: Math.floor(atk / 1.5) + 20 }
+        { name: typeAttacks[0], cost: 1, damage: 10 + Math.floor(atk / 10) },
+        { name: typeAttacks[1], cost: Math.min(3, Math.floor(spatk / 40) + 2), damage: Math.floor((atk + spatk) / 2.5) + 20 }
     ];
 
     // Calcul du total des stats correctement
     const totalStats = stats["HP"] + atk + def + spatk + spdef + spd;
     let rarity = calculateRarity(p.id, totalStats);
+
+    // Faiblesse, résistance et retraite dynamiques
+    const weakness = TYPE_WEAKNESSES[typeEn] || "Normal";
+    const resistance = TYPE_RESISTANCES[typeEn] || null;
+    const retreatCost = Math.max(0, Math.min(3, Math.floor((totalStats - 200) / 120))); // 0-3 selon les stats
 
     return {
         id: p.id,
@@ -115,7 +161,9 @@ function processPokemon(p) {
         types: [typeEn],
         image: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p.id}.png`,
         attacks: attacks,
-        weakness: "Standard",
+        weakness: weakness,
+        resistance: resistance,
+        retreatCost: retreatCost,
         rarity_tag: rarity
     };
 }

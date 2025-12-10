@@ -77,7 +77,28 @@
                     <span class="search-icon">🔍</span>
                     <input type="text" id="search-input" placeholder="Filtrer..." oninput="filterBinder()" aria-label="Rechercher une carte">
                 </div>
+                <div class="sort-container">
+                    <select id="sort-select" onchange="filterBinder()">
+                        <option value="id">Par Numéro</option>
+                        <option value="name">Alphabétique</option>
+                        <option value="rarity-desc">Du Plus Rare au Moins</option>
+                        <option value="rarity-asc">Du Moins Rare au Plus</option>
+                        <option value="owned-desc">Du Plus Possédé au Moins</option>
+                        <option value="owned-asc">Du Moins Possédé au Plus</option>
+                    </select>
+                    <span class="sort-arrow">▼</span>
                 </div>
+                <div class="filter-checkboxes">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="show-owned" checked onchange="filterBinder()">
+                        <span>Possédées</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="show-missing" checked onchange="filterBinder()">
+                        <span>Manquantes</span>
+                    </label>
+                </div>
+            </div>
 
             <div id="admin-link-container" style="display: none; margin-top: 20px;">
                 <a href="admin.html" class="btn-admin-link">⚙️ ADMIN</a>

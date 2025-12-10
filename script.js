@@ -180,13 +180,66 @@ function renderBinder() {
     
     const searchInput = document.getElementById('search-input');
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
+    
+    const sortSelect = document.getElementById('sort-select');
+    const sortType = sortSelect ? sortSelect.value : 'id';
+    
+    const showOwned = document.getElementById('show-owned');
+    const showMissing = document.getElementById('show-missing');
+    const displayOwned = showOwned ? showOwned.checked : true;
+    const displayMissing = showMissing ? showMissing.checked : true;
 
-    currentGenData.forEach(cardRef => {
-        // Filtre Recherche
-        if(searchTerm && !cardRef.name.toLowerCase().includes(searchTerm)) return;
-
-        // On regarde si le joueur a cette carte (par ID)
+    // Préparer les données avec quantité possédée
+    const cardsWithOwned = currentGenData.map(cardRef => {
         const ownedCopies = userCollection.filter(c => c.id === cardRef.id).length;
+        return { ...cardRef, ownedCopies };
+    });
+
+    // Filtrer par recherche et visibilité
+    const filteredCards = cardsWithOwned.filter(cardRef => {
+        // Filtre recherche
+        if(searchTerm && !cardRef.name.toLowerCase().includes(searchTerm)) return false;
+        
+        // Filtre possédée/manquante
+        const isOwned = cardRef.ownedCopies > 0;
+        if (isOwned && !displayOwned) return false;
+        if (!isOwned && !displayMissing) return false;
+        
+        // Ne pas montrer les secrètes non possédées
+        if (!isOwned && cardRef.rarityKey === 'secret') return false;
+        
+        return true;
+    });
+
+    // Trier selon le critère
+    const rarityValues = { 'secret': 5, 'ultra_rare': 4, 'rare': 3, 'uncommon': 2, 'common': 1 };
+    
+    filteredCards.sort((a, b) => {
+        switch(sortType) {
+            case 'name':
+                return a.name.localeCompare(b.name);
+            case 'rarity-desc':
+                return (rarityValues[b.rarityKey] || 0) - (rarityValues[a.rarityKey] || 0);
+            case 'rarity-asc':
+                return (rarityValues[a.rarityKey] || 0) - (rarityValues[b.rarityKey] || 0);
+            case 'owned-desc':
+                return b.ownedCopies - a.ownedCopies;
+            case 'owned-asc':
+                return a.ownedCopies - b.ownedCopies;
+            case 'id':
+            default:
+                return a.id - b.id;
+        }
+    });
+
+    // Message si aucun résultat
+    if (filteredCards.length === 0) {
+        grid.innerHTML = '<div style="color: #999; text-align: center; width: 100%; padding: 40px; font-size: 1.2rem;">❌ Aucune carte ne correspond aux filtres</div>';
+        return;
+    }
+
+    filteredCards.forEach(cardRef => {
+        const ownedCopies = cardRef.ownedCopies;
         
         if (ownedCopies > 0) {
             // --- CARTE POSSÉDÉE ---
@@ -195,21 +248,11 @@ function renderBinder() {
             // On force la rareté correcte (au cas où)
             const cardToRender = { ...userCard, rarityKey: cardRef.rarityKey };
             
-            const el = createCardElement(cardToRender);
+            const el = createCardElement(cardToRender, ownedCopies);
             
-            // Badge quantité (si > 1)
-            if(ownedCopies > 1) {
-                const badge = document.createElement('div');
-                badge.className = 'card-quantity';
-                badge.innerText = `x${ownedCopies}`;
-                el.appendChild(badge);
-            }
             grid.appendChild(el);
         } else {
             // --- CARTE MANQUANTE (PLACEHOLDER) ---
-            // On ne montre PAS l'emplacement des secrètes
-            if (cardRef.rarityKey === 'secret') return;
-
             const el = document.createElement('div');
             el.className = 'card-placeholder';
             el.innerHTML = `
@@ -227,16 +270,19 @@ window.filterBinder = () => {
 };
 
 // Création du HTML d'une carte
-function createCardElement(card) {
+function createCardElement(card, quantity = 1) {
     const div = document.createElement('div');
     const mainType = card.types ? card.types[0] : 'Normal';
     const cssRarity = card.rarityKey ? card.rarityKey.replace('_', '-') : 'commune';
     
     const labels = {'common':'COMMUNE', 'uncommon':'PEU COM.', 'rare':'RARE', 'ultra_rare':'ULTRA RARE', 'secret':'SECRET'};
-    const label = labels[card.rarityKey] || '';
+    const labelText = labels[card.rarityKey] || '';
+    const label = quantity > 1 ? `${labelText}  |  x${quantity}` : labelText;
     
     const icon = GAME_CONFIG.icons[mainType] || GAME_CONFIG.icons['Normal'];
-    const weak = GAME_CONFIG.icons[card.weakness] || GAME_CONFIG.icons['Normal'];
+    const weakIcon = GAME_CONFIG.icons[card.weakness] || GAME_CONFIG.icons['Normal'];
+    const resIcon = card.resistance ? GAME_CONFIG.icons[card.resistance] : null;
+    const retreatCircles = '⚪'.repeat(card.retreatCost || 0) || '-';
 
     div.className = `tcg-card ${cssRarity} bg-${mainType}`;
 
@@ -255,7 +301,7 @@ function createCardElement(card) {
     }
 
     div.innerHTML = `
-        ${label !== 'COMMUNE' ? `<div class="rarity-badge badge-${cssRarity}">${label}</div>` : ''}
+        ${label && card.rarityKey !== 'common' ? `<div class="rarity-badge badge-${cssRarity}">${label}</div>` : ''}
         <div class="card-header">
             <span class="card-name">${card.name}</span>
             <div class="hp-group">${card.hp} PV <img src="${icon}" class="type-icon big"></div>
@@ -266,9 +312,9 @@ function createCardElement(card) {
         </div>
         <div class="card-body">${attacks}</div>
         <div class="card-footer">
-            <div class="stat-box">Faiblesse<br><img src="${weak}" class="type-icon small"></div>
-            <div class="stat-box">Résist.<br>-</div>
-            <div class="stat-box">Retraite<br>⚪</div>
+            <div class="stat-box">Faiblesse<br><img src="${weakIcon}" class="type-icon small"></div>
+            <div class="stat-box">Résist.<br>${resIcon ? `<img src="${resIcon}" class="type-icon small">` : '-'}</div>
+            <div class="stat-box">Retraite<br>${retreatCircles}</div>
         </div>
     `;
     return div;
