@@ -313,7 +313,7 @@ window.drawCard = async () => {
                 var list = await fallback.json();
                 rarityConfig = GAME_CONFIG.dropRates[0];
             } else {
-                var list = await response.json();
+                var list = await res.json();
                 // Si le fichier est vide []
                 if(!list || list.length === 0) {
                     const fallback = await fetch(`data/${selectedGen}/common.json`);
