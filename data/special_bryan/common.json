@@ -26,7 +26,7 @@
     "rarity_tag": "common"
   },
   {
-    "id": 1014,
+    "id": 1003,
     "name": "La Pixel War",
     "hp": 0,
     "types": ["Electric"],
@@ -39,7 +39,7 @@
     "rarity_tag": "common"
   },
   {
-    "id": 1015,
+    "id": 1004,
     "name": "Paris Games Week",
     "hp": 0,
     "types": ["Normal"],

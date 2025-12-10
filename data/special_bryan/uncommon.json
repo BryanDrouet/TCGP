@@ -1,6 +1,6 @@
 [
   {
-    "id": 1003,
+    "id": 1005,
     "name": "Puy du Fou",
     "hp": 0,
     "types": ["Dragon"],
@@ -13,7 +13,7 @@
     "rarity_tag": "uncommon"
   },
   {
-    "id": 1016,
+    "id": 1006,
     "name": "Popcorn Festival",
     "hp": 0,
     "types": ["Grass"],

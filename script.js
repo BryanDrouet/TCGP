@@ -62,6 +62,7 @@ let userCollection = []; // Cartes possédées par le joueur
 let currentGenData = []; // Toutes les cartes possibles de la gen active
 let cooldownInterval = null;
 let tempBoosterCards = []; // Cartes en cours d'ouverture
+let adminShowAllMode = false; // Mode admin pour afficher toutes les cartes
 
 // --- INITIALISATION AU CHARGEMENT DE LA PAGE ---
 window.onload = () => {
@@ -107,6 +108,8 @@ onAuthStateChanged(auth, async (user) => {
         const isAdmin = (user.email === ADMIN_EMAIL);
         const adminLink = document.getElementById('admin-link-container');
         if(adminLink) adminLink.style.display = isAdmin ? 'block' : 'none';
+        const adminPreview = document.getElementById('admin-preview-container');
+        if(adminPreview) adminPreview.style.display = isAdmin ? 'block' : 'none';
 
         // Check Notifications (Visuel uniquement)
         updateBellIcon();
@@ -200,9 +203,9 @@ function renderBinder() {
     const displayOwned = showOwned ? showOwned.checked : true;
     const displayMissing = showMissing ? showMissing.checked : true;
 
-    // Préparer les données avec quantité possédée
+    // Préparer les données avec quantité possédée (ou mode admin)
     const cardsWithOwned = currentGenData.map(cardRef => {
-        const ownedCopies = userCollection.filter(c => c.id === cardRef.id).length;
+        const ownedCopies = adminShowAllMode ? 1 : userCollection.filter(c => c.id === cardRef.id).length;
         return { ...cardRef, ownedCopies };
     });
 
@@ -254,10 +257,11 @@ function renderBinder() {
         
         if (ownedCopies > 0) {
             // --- CARTE POSSÉDÉE ---
-            // On prend la première copie pour avoir les infos complètes
-            const userCard = userCollection.find(c => c.id === cardRef.id);
+            // En mode admin, on utilise cardRef directement
+            // Sinon on cherche dans la collection utilisateur
+            const userCard = adminShowAllMode ? cardRef : userCollection.find(c => c.id === cardRef.id);
             // On force la rareté correcte (au cas où)
-            const cardToRender = { ...userCard, rarityKey: cardRef.rarityKey };
+            const cardToRender = userCard ? { ...userCard, rarityKey: cardRef.rarityKey } : cardRef;
             
             const el = createCardElement(cardToRender, ownedCopies);
             
@@ -277,6 +281,13 @@ function renderBinder() {
 
 // Fonction appelée par la barre de recherche
 window.filterBinder = () => {
+    renderBinder();
+};
+
+// Mode admin : afficher toutes les cartes
+window.toggleAdminPreview = () => {
+    const checkbox = document.getElementById('admin-show-all');
+    adminShowAllMode = checkbox ? checkbox.checked : false;
     renderBinder();
 };
 
