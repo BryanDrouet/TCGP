@@ -169,7 +169,7 @@ nav { background: var(--dark); border-bottom: 4px solid var(--secondary); paddin
     padding-bottom: 8px;
 }
 .hp-group { display: flex; align-items: center; gap: 3px; color: #d00; font-weight: bold; }
-.img-frame { margin-bottom: 3px; position: relative; }
+.img-frame { margin-bottom: 8px; position: relative; }
 .card-img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
 .card-body { height:100%; background: rgba(255,255,255,0.6); padding: 2px; border-radius: 4px; overflow: hidden; }
 .card-description { padding: 4px 6px; font-size: 0.95em; line-height: 1.3; text-align: left; color: #333; }
