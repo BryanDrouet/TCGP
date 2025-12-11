@@ -1,0 +1,180 @@
+name: Security and Compatibility Checks
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+          queries: security-and-quality
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+  
+  dependency-check:
+    name: Dependency Vulnerability Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check for npm dependencies
+        id: check-package
+        run: |
+          if [ -f "package.json" ]; then
+            echo "has_package=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_package=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Setup Node.js
+        if: steps.check-package.outputs.has_package == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        if: steps.check-package.outputs.has_package == 'true'
+        run: npm ci
+      
+      - name: Run npm audit
+        if: steps.check-package.outputs.has_package == 'true'
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+  
+  responsive-design-check:
+    name: Responsive Design Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check for viewport meta tag
+        run: |
+          echo "Checking HTML files for viewport meta tag..."
+          found=0
+          for file in $(find . -name "*.html" -not -path "./node_modules/*"); do
+            if grep -q 'name="viewport"' "$file"; then
+              echo "✓ $file has viewport meta tag"
+              found=1
+            else
+              echo "✗ $file is missing viewport meta tag"
+              exit 1
+            fi
+          done
+          if [ $found -eq 0 ]; then
+            echo "No HTML files found"
+          fi
+      
+      - name: Check for media queries in CSS
+        run: |
+          echo "Checking CSS files for responsive media queries..."
+          found=0
+          for file in $(find . -name "*.css" -not -path "./node_modules/*"); do
+            count=$(grep -c "@media" "$file" || true)
+            if [ $count -gt 0 ]; then
+              echo "✓ $file has $count media queries"
+              found=1
+            else
+              echo "⚠ $file has no media queries"
+            fi
+          done
+          if [ $found -eq 0 ]; then
+            echo "Warning: No CSS files with media queries found"
+          fi
+      
+      - name: Check for mobile-friendly meta tags
+        run: |
+          echo "Checking for mobile-friendly meta tags..."
+          for file in $(find . -name "*.html" -not -path "./node_modules/*"); do
+            if grep -q 'mobile-web-app-capable\|apple-mobile-web-app-capable' "$file"; then
+              echo "✓ $file has mobile app meta tags"
+            fi
+          done
+      
+      - name: Check manifest.json for PWA
+        run: |
+          if [ -f "manifest.json" ]; then
+            echo "✓ manifest.json found"
+            if grep -q '"display".*"standalone"' manifest.json; then
+              echo "✓ PWA standalone mode configured"
+            fi
+            if grep -q '"start_url"' manifest.json; then
+              echo "✓ start_url configured"
+            fi
+          else
+            echo "⚠ No manifest.json found (optional for PWA)"
+          fi
+      
+      - name: Check Service Worker
+        run: |
+          if [ -f "sw.js" ] || [ -f "service-worker.js" ]; then
+            echo "✓ Service Worker found"
+          else
+            echo "⚠ No Service Worker found (optional for PWA)"
+          fi
+  
+  accessibility-check:
+    name: Basic Accessibility Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Check for alt attributes on images
+        run: |
+          echo "Checking for images without alt attributes..."
+          for file in $(find . -name "*.html" -not -path "./node_modules/*"); do
+            # Check for img tags without alt attribute
+            if grep -P '<img(?![^>]*\balt=)' "$file"; then
+              echo "⚠ $file may have images without alt attributes"
+            else
+              echo "✓ $file images check passed"
+            fi
+          done
+      
+      - name: Check for aria-label attributes
+        run: |
+          echo "Checking for aria-label usage..."
+          for file in $(find . -name "*.html" -not -path "./node_modules/*"); do
+            count=$(grep -c 'aria-label' "$file" || true)
+            if [ $count -gt 0 ]; then
+              echo "✓ $file has $count aria-label attributes"
+            fi
+          done
+      
+      - name: Check for semantic HTML
+        run: |
+          echo "Checking for semantic HTML elements..."
+          for file in $(find . -name "*.html" -not -path "./node_modules/*"); do
+            semantic_count=0
+            for tag in nav header footer main section article aside; do
+              if grep -q "<$tag" "$file"; then
+                semantic_count=$((semantic_count + 1))
+              fi
+            done
+            if [ $semantic_count -gt 0 ]; then
+              echo "✓ $file uses $semantic_count semantic HTML5 elements"
+            else
+              echo "⚠ $file uses no semantic HTML5 elements"
+            fi
+          done
