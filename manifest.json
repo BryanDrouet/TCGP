@@ -2,7 +2,7 @@
   "name": "Poké-TCG Ultimate",
   "short_name": "Poké-TCG",
   "description": "Collectionnez des cartes Pokémon virtuelles de toutes les générations",
-  "start_url": "/",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#1a1a1a",
   "theme_color": "#3b4cca",

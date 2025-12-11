@@ -2,6 +2,89 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, updateDoc, arrayUnion, getDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// --- SYSTÈME DE LOGGING ---
+const Logger = {
+    logs: [],
+    maxLogs: 100,
+    maxStoredLogs: 50,
+    
+    log(level, message, data = null) {
+        const timestamp = new Date().toISOString();
+        const logEntry = {
+            timestamp,
+            level,
+            message,
+            data,
+            userAgent: navigator.userAgent,
+            url: window.location.href
+        };
+        
+        this.logs.push(logEntry);
+        if (this.logs.length > this.maxLogs) {
+            this.logs.shift();
+        }
+        
+        // Console output avec couleur
+        const styles = {
+            info: 'color: #4CAF50',
+            warn: 'color: #FF9800',
+            error: 'color: #f44336',
+            debug: 'color: #2196F3'
+        };
+        console.log(`%c[${level.toUpperCase()}] ${timestamp}: ${message}`, styles[level] || '', data || '');
+        
+        // Stocker dans localStorage pour persistance
+        try {
+            localStorage.setItem('app_logs', JSON.stringify(this.logs.slice(-this.maxStoredLogs)));
+        } catch (e) {
+            console.warn('Impossible de sauvegarder les logs dans localStorage:', e.message);
+        }
+    },
+    
+    info(message, data) { this.log('info', message, data); },
+    warn(message, data) { this.log('warn', message, data); },
+    error(message, data) { this.log('error', message, data); },
+    debug(message, data) { this.log('debug', message, data); },
+    
+    getLogs() { return this.logs; },
+    
+    clearLogs() { 
+        this.logs = []; 
+        localStorage.removeItem('app_logs');
+    }
+};
+
+// Charger les logs depuis localStorage au démarrage
+try {
+    const savedLogs = localStorage.getItem('app_logs');
+    if (savedLogs) {
+        Logger.logs = JSON.parse(savedLogs);
+    }
+} catch (e) {
+    console.error('Erreur chargement logs:', e);
+}
+
+// Capturer les erreurs globales
+window.addEventListener('error', (event) => {
+    Logger.error('Erreur JavaScript non gérée', {
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        error: event.error?.stack
+    });
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+    Logger.error('Promise non gérée', {
+        reason: event.reason,
+        promise: event.promise
+    });
+});
+
+// Exposer Logger globalement pour debugging
+window.Logger = Logger;
+
 // --- ENREGISTREMENT SERVICE WORKER (PWA) ---
 let deferredPrompt = null;
 
@@ -9,10 +92,10 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
             .then(registration => {
-                console.log('Service Worker enregistré:', registration.scope);
+                Logger.info('Service Worker enregistré', { scope: registration.scope });
             })
             .catch(error => {
-                console.log('Erreur Service Worker:', error);
+                Logger.error('Erreur Service Worker', error);
             });
     });
 }
@@ -21,6 +104,7 @@ if ('serviceWorker' in navigator) {
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
+    Logger.info('PWA prête à être installée');
     // Afficher le bouton d'installation
     const installBtn = document.getElementById('install-pwa-btn');
     if (installBtn) {
@@ -36,7 +120,9 @@ window.installPWA = async function() {
     const { outcome } = await deferredPrompt.userChoice;
     
     if (outcome === 'accepted') {
-        console.log('PWA installée');
+        Logger.info('PWA installée avec succès');
+    } else {
+        Logger.info('Installation PWA annulée par l\'utilisateur');
     }
     
     deferredPrompt = null;
@@ -48,6 +134,7 @@ window.installPWA = async function() {
 
 // Cacher le bouton si déjà installé
 window.addEventListener('appinstalled', () => {
+    Logger.info('PWA installée (événement appinstalled)');
     const installBtn = document.getElementById('install-pwa-btn');
     if (installBtn) {
         installBtn.style.display = 'none';
