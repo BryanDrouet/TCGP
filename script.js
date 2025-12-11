@@ -90,13 +90,23 @@ const DeviceInfo = {
     userAgent: navigator.userAgent,
     platform: navigator.platform,
     isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream,
-    isIPad: /iPad/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1),
+    // iPad detection: combine multiple signals for reliability
+    isIPad: /iPad/.test(navigator.userAgent) || 
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+            (navigator.userAgentData?.platform === 'macOS' && navigator.maxTouchPoints > 1),
     isAndroid: /Android/.test(navigator.userAgent),
     isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
     isSafari: /^((?!chrome|android).)*safari/i.test(navigator.userAgent),
     isChrome: /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor),
     isFirefox: /Firefox/.test(navigator.userAgent),
     isSamsung: /SamsungBrowser/.test(navigator.userAgent),
+    // Problematic browsers detection
+    isInAppBrowser: /FBAN|FBAV|Instagram|Line|Snapchat|Twitter|WeChat/i.test(navigator.userAgent),
+    isCometBrowser: /Comet/i.test(navigator.userAgent),
+    
+    get isProblematicBrowser() {
+        return this.isInAppBrowser || this.isCometBrowser;
+    },
     
     get info() {
         return {
@@ -110,6 +120,8 @@ const DeviceInfo = {
             isChrome: this.isChrome,
             isFirefox: this.isFirefox,
             isSamsung: this.isSamsung,
+            isInAppBrowser: this.isInAppBrowser,
+            isCometBrowser: this.isCometBrowser,
             screenWidth: window.screen.width,
             screenHeight: window.screen.height,
             viewport: {
@@ -188,7 +200,8 @@ window.addEventListener('appinstalled', () => {
 // --- 1. CONFIGURATION ---
 const ADMIN_EMAIL = "bryan.drouet24@gmail.com"; 
 const COOLDOWN_MINUTES = 3;
-const PACKS_PER_COOLDOWN = 3; 
+const PACKS_PER_COOLDOWN = 3;
+const AUTH_LOADING_TIMEOUT_MS = 10000; // 10 secondes max pour l'authentification 
 
 // TA CONFIG FIREBASE (Celle que tu m'as donnée)
 const firebaseConfig = {
@@ -376,14 +389,12 @@ let selectedRarityFilter = null; // Filtre de rareté actif
 
 // --- INITIALISATION AU CHARGEMENT DE LA PAGE ---
 window.onload = () => {
-    // Détection de navigateurs problématiques
-    const isInAppBrowser = /FBAN|FBAV|Instagram|Line|Snapchat|Twitter|WeChat/i.test(navigator.userAgent);
-    const isCometBrowser = /Comet/i.test(navigator.userAgent);
-    
-    if (isInAppBrowser || isCometBrowser) {
-        Logger.warn('Navigateur in-app détecté', { 
+    // Vérifier si on est dans un environnement problématique
+    if (DeviceInfo.isProblematicBrowser) {
+        Logger.warn('Navigateur problématique détecté', { 
             userAgent: navigator.userAgent,
-            isCometBrowser: isCometBrowser 
+            isCometBrowser: DeviceInfo.isCometBrowser,
+            isInAppBrowser: DeviceInfo.isInAppBrowser
         });
         
         // Afficher un avertissement pour les utilisateurs
@@ -563,19 +574,19 @@ Maximum 2 cartes identiques par pack
 };
 
 // --- AUTHENTIFICATION ---
-// Timeout de sécurité pour le loader (10 secondes max)
+// Timeout de sécurité pour le loader
 let authLoadingTimeout = setTimeout(() => {
     const loader = document.getElementById('global-loader');
     if (loader && loader.style.display !== 'none') {
         Logger.error('Timeout du chargement - forçage de l\'affichage');
         loader.style.display = 'none';
-        // Si pas d'utilisateur après 10s, afficher l'écran de connexion
+        // Si pas d'utilisateur après timeout, afficher l'écran de connexion
         if (!auth.currentUser) {
             document.getElementById('auth-overlay').style.display = 'flex';
             window.showPopup("Erreur de chargement", "Le chargement a pris trop de temps. Veuillez vous reconnecter.");
         }
     }
-}, 10000);
+}, AUTH_LOADING_TIMEOUT_MS);
 
 onAuthStateChanged(auth, async (user) => {
     const loader = document.getElementById('global-loader');
@@ -659,7 +670,21 @@ onAuthStateChanged(auth, async (user) => {
         } catch (error) {
             Logger.error('Erreur lors du chargement de l\'application', error);
             if(loader) loader.style.display = 'none';
-            window.showPopup("Erreur", "Une erreur est survenue lors du chargement. Rechargez la page.");
+            
+            // Message d'erreur plus détaillé selon le type d'erreur
+            let errorMessage = "Une erreur est survenue lors du chargement.\n\n";
+            
+            if (error.code === 'permission-denied') {
+                errorMessage += "Problème de permissions. Vérifiez votre connexion et réessayez.";
+            } else if (error.code === 'unavailable') {
+                errorMessage += "Service temporairement indisponible. Veuillez réessayer dans quelques instants.";
+            } else if (error.message) {
+                errorMessage += `Détails: ${error.message}\n\nRechargez la page ou contactez le support.`;
+            } else {
+                errorMessage += "Rechargez la page (F5) ou videz le cache si le problème persiste.";
+            }
+            
+            window.showPopup("Erreur", errorMessage);
         }
 
     } else {
