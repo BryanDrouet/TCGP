@@ -101,6 +101,11 @@ async function checkSingleInstance(userId) {
                         <p style="font-size: 1.2rem; margin-bottom: 30px;">Votre compte est déjà connecté ailleurs.</p>
                         <p style="font-size: 1rem; color: #999;">Fermez l'autre instance pour continuer ici.</p>
                         <button onclick="location.reload()" style="margin-top: 30px; padding: 15px 30px; background: #ffde00; color: #1a1a1a; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem;">Réessayer</button>
+                        <div style="margin-top: 40px; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 8px; max-width: 500px;">
+                            <p style="font-size: 0.9rem; color: #ccc; margin-bottom: 15px;">⚙️ <strong>Si le problème persiste :</strong></p>
+                            <button onclick="localStorage.clear(); sessionStorage.clear(); location.reload();" style="padding: 12px 25px; background: #e74c3c; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.95rem;">Effacer les cookies et recharger (F5)</button>
+                            <p style="font-size: 0.8rem; color: #888; margin-top: 10px;">Ceci va vous déconnecter et nettoyer les données locales.</p>
+                        </div>
                     </div>
                 `;
                 return false;
@@ -266,12 +271,12 @@ window.resetAccount = async () => {
     if (!user) return;
     
     try {
-        await updateDoc(doc(db, "players", user.uid), {
+        await setDoc(doc(db, "players", user.uid), {
             collection: [],
             packsByGen: {},
             currentBooster: [],
             boosterRevealedCards: []
-        });
+        }, { merge: true });
         
         closePopup();
         window.showPopup("✅ Compte réinitialisé", "Votre compte a été réinitialisé avec succès. Rechargez la page.");
@@ -410,7 +415,7 @@ onAuthStateChanged(auth, async (user) => {
             const notif = snap.data().adminNotification;
             window.showPopup("Notification Admin", notif.message);
             // Supprimer la notification après affichage
-            await updateDoc(doc(db, "players", user.uid), { adminNotification: null });
+            await setDoc(doc(db, "players", user.uid), { adminNotification: null }, { merge: true });
         }
         
         // 3. Charger le classeur (Gen par défaut)
@@ -891,7 +896,8 @@ window.drawCard = async () => {
             updatePacksDisplay(availablePacks);
         }
         
-        await updateDoc(doc(db, "players", user.uid), updateData);
+        // Utiliser setDoc avec merge pour créer le document s'il n'existe pas
+        await setDoc(doc(db, "players", user.uid), updateData, { merge: true });
 
         // Ajout à la collection locale
         userCollection.push(...tempBoosterCards);
@@ -935,8 +941,15 @@ function openBoosterVisual(alreadyRevealed = []) {
     document.body.classList.add('booster-active');
 
     let cardsRevealed = alreadyRevealed.length;
+    
+    // Calculer le displayId et totalCards pour chaque carte du booster
+    const totalCards = currentGenData.length;
 
     tempBoosterCards.forEach((card, index) => {
+        // Trouver le displayId de la carte dans currentGenData
+        const cardInGen = currentGenData.find(c => c.id === card.id);
+        const cardNumber = cardInGen ? cardInGen.displayId : null;
+        
         const flipCard = document.createElement('div');
         flipCard.className = 'flip-card';
         // Marquer visuellement la 5ème carte
@@ -958,7 +971,7 @@ function openBoosterVisual(alreadyRevealed = []) {
         
         const back = document.createElement('div');
         back.className = 'flip-card-back'; // Face (Carte)
-        const cardEl = createCardElement(card);
+        const cardEl = createCardElement(card, 1, cardNumber, totalCards);
         back.appendChild(cardEl);
 
         inner.appendChild(front);
@@ -989,9 +1002,9 @@ function openBoosterVisual(alreadyRevealed = []) {
                 const user = auth.currentUser;
                 if (user) {
                     try {
-                        await updateDoc(doc(db, "players", user.uid), {
+                        await setDoc(doc(db, "players", user.uid), {
                             boosterRevealedCards: alreadyRevealed
-                        });
+                        }, { merge: true });
                     } catch (e) {
                         console.error("Erreur sauvegarde révélation:", e);
                     }
@@ -1025,10 +1038,10 @@ window.closeBooster = async () => {
     const user = auth.currentUser;
     if (user) {
         try {
-            await updateDoc(doc(db, "players", user.uid), {
+            await setDoc(doc(db, "players", user.uid), {
                 currentBooster: [],
                 boosterRevealedCards: []
-            });
+            }, { merge: true });
         } catch (e) {
             console.error("Erreur nettoyage booster:", e);
         }
@@ -1081,9 +1094,9 @@ async function checkCooldown(uid) {
                 lastDrawTime: genData.lastDrawTime
             };
             
-            await updateDoc(doc(db, "players", uid), { 
+            await setDoc(doc(db, "players", uid), { 
                 packsByGen: packsByGen
-            });
+            }, { merge: true });
         }
         
         // Afficher le nombre de packs disponibles avec animation si régénération

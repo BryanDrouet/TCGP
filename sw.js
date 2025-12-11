@@ -41,7 +41,6 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   // Ignorer les requêtes POST et autres méthodes non-GET
   if (event.request.method !== 'GET') {
-    console.log('SW: Ignoring non-GET request:', event.request.method, event.request.url);
     return;
   }
   
@@ -49,7 +48,6 @@ self.addEventListener('fetch', event => {
   if (event.request.url.includes('firebasestorage') || 
       event.request.url.includes('firebaseapp') ||
       event.request.url.includes('googleapis')) {
-    console.log('SW: Ignoring Firebase request:', event.request.url);
     return;
   }
   

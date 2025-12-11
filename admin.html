@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>TCG - Dashboard Admin</title>
-    <script>document.write('<link rel="stylesheet" href="style.css?v=' + Date.now() + '">');</script>
+    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
@@ -29,11 +29,16 @@
             <a href="index.html" class="btn-back">⬅ Retour au Jeu</a>
         </div>
 
-        <div style="background: #222; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-            <h4 style="color:#ffde00; margin-top:0;">Actions Rapides</h4>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div style="background: #222; padding: 20px; border-radius: 10px;">
+                <h4 style="color:#ffde00; margin-top:0;">Base de données</h4>
+                <p>Télécharger les JSONs Gen 1 à 7.</p>
                 <button onclick="downloadAllGensZip()" class="btn-admin">💾 Générer le ZIP</button>
-                <button onclick="loadAllPlayers()" class="btn-admin">🔄 Rafraîchir la liste</button>
+            </div>
+            
+            <div style="background: #222; padding: 20px; border-radius: 10px;">
+                <h4 style="color:#ffde00; margin-top:0;">Actions Rapides</h4>
+                <button onclick="loadAllPlayers()" class="btn-secondary">🔄 Rafraîchir la liste</button>
             </div>
         </div>
 
