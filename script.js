@@ -1068,6 +1068,20 @@ window.closeBooster = async () => {
 };
 
 // --- COOLDOWN PAR GÉNÉRATION ---
+// Helper pour régénérer les packs d'une génération
+async function regeneratePacksForGen(uid, currentGen, packsByGen) {
+    packsByGen[currentGen] = {
+        availablePacks: PACKS_PER_COOLDOWN,
+        lastDrawTime: 0
+    };
+    
+    await setDoc(doc(db, "players", uid), { 
+        packsByGen: packsByGen
+    }, { merge: true });
+    
+    return PACKS_PER_COOLDOWN;
+}
+
 async function checkCooldown(uid) {
     const genSelect = document.getElementById('gen-select');
     const currentGen = genSelect ? genSelect.value : 'gen7';
@@ -1085,20 +1099,9 @@ async function checkCooldown(uid) {
         const cooldownMs = COOLDOWN_MINUTES * 60 * 1000;
         
         // Si le cooldown est passé ET qu'il n'y a plus de packs, régénérer TOUS les packs
-        const wasZero = availablePacks === 0;
-        if (availablePacks === 0 && diff >= cooldownMs) {
-            availablePacks = PACKS_PER_COOLDOWN;
-            
-            // Mettre à jour Firebase pour cette génération
-            // Reset lastDrawTime à 0 pour indiquer que les packs sont pleins et prêts
-            packsByGen[currentGen] = {
-                availablePacks: PACKS_PER_COOLDOWN,
-                lastDrawTime: 0
-            };
-            
-            await setDoc(doc(db, "players", uid), { 
-                packsByGen: packsByGen
-            }, { merge: true });
+        const wasZero = availablePacks <= 0;
+        if (availablePacks <= 0 && diff >= cooldownMs) {
+            availablePacks = await regeneratePacksForGen(uid, currentGen, packsByGen);
         }
         
         // Afficher le nombre de packs disponibles avec animation si régénération
@@ -1115,15 +1118,8 @@ async function checkCooldown(uid) {
             } else {
                 // Si le temps est déjà passé mais qu'on arrive ici, forcer la régénération
                 // (Ne devrait normalement pas arriver grâce au check ci-dessus)
-                availablePacks = PACKS_PER_COOLDOWN;
-                packsByGen[currentGen] = {
-                    availablePacks: PACKS_PER_COOLDOWN,
-                    lastDrawTime: 0
-                };
-                await setDoc(doc(db, "players", uid), { 
-                    packsByGen: packsByGen
-                }, { merge: true });
-                updatePacksDisplay(PACKS_PER_COOLDOWN, true);
+                availablePacks = await regeneratePacksForGen(uid, currentGen, packsByGen);
+                updatePacksDisplay(availablePacks, true);
                 enableBoosterButton(true);
             }
         }
