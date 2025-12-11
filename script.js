@@ -117,10 +117,19 @@ onAuthStateChanged(auth, async (user) => {
         // 1. Charger la collection
         await fetchUserCollection(user.uid);
         
-        // 2. Charger le classeur (Gen par défaut)
+        // 2. Vérifier si un booster est en cours d'ouverture
+        const snap = await getDoc(doc(db, "players", user.uid));
+        if (snap.exists() && snap.data().currentBooster && snap.data().currentBooster.length > 0) {
+            // Restaurer l'ouverture en cours
+            tempBoosterCards = snap.data().currentBooster;
+            const revealedCards = snap.data().boosterRevealedCards || [];
+            openBoosterVisual(revealedCards);
+        }
+        
+        // 3. Charger le classeur (Gen par défaut)
         await changeGen(); 
 
-        // 3. Vérifier le Cooldown
+        // 4. Vérifier le Cooldown
         if (!isAdmin) await checkCooldown(user.uid);
         else enableBoosterButton(true);
 
@@ -144,9 +153,23 @@ async function fetchUserCollection(uid) {
             userCollection = snap.data().collection || [];
             const countEl = document.getElementById('card-count');
             if(countEl) countEl.innerText = userCollection.length;
+        } else {
+            // Le compte n'existe pas en Firestore -> Recréer automatiquement
+            console.log("Document joueur inexistant, création...");
+            await setDoc(doc(db, "players", uid), {
+                email: auth.currentUser.email,
+                collection: [],
+                lastDrawTime: 0,
+                role: 'player'
+            });
+            userCollection = [];
+            const countEl = document.getElementById('card-count');
+            if(countEl) countEl.innerText = 0;
         }
     } catch (e) {
         console.error("Erreur chargement collection:", e);
+        window.showPopup("Erreur", "Impossible de charger votre profil. Veuillez vous reconnecter.");
+        await signOut(auth);
     }
 }
 
@@ -434,7 +457,11 @@ window.drawCard = async () => {
         openBoosterVisual();
 
         // Sauvegarde Firebase
-        const updateData = { collection: arrayUnion(...tempBoosterCards) };
+        const updateData = { 
+            collection: arrayUnion(...tempBoosterCards),
+            currentBooster: tempBoosterCards, // Sauvegarde de l'ouverture en cours
+            boosterRevealedCards: [] // Aucune carte révélée au départ
+        };
         if (!isAdmin) updateData.lastDrawTime = Date.now();
         await updateDoc(doc(db, "players", user.uid), updateData);
 
@@ -456,7 +483,7 @@ window.drawCard = async () => {
     }
 };
 
-function openBoosterVisual() {
+function openBoosterVisual(alreadyRevealed = []) {
     const overlay = document.getElementById('booster-overlay');
     const container = document.getElementById('booster-cards-container');
     const closeBtn = document.getElementById('close-booster-btn');
@@ -465,7 +492,7 @@ function openBoosterVisual() {
     closeBtn.style.display = 'none';
     overlay.style.display = 'flex';
 
-    let cardsRevealed = 0;
+    let cardsRevealed = alreadyRevealed.length;
 
     tempBoosterCards.forEach((card, index) => {
         const flipCard = document.createElement('div');
@@ -481,17 +508,45 @@ function openBoosterVisual() {
         
         const back = document.createElement('div');
         back.className = 'flip-card-back'; // Face (Carte)
-        back.appendChild(createCardElement(card));
+        const cardEl = createCardElement(card);
+        back.appendChild(cardEl);
 
         inner.appendChild(front);
         inner.appendChild(back);
         flipCard.appendChild(inner);
 
+        // Si la carte était déjà révélée, la retourner
+        if (alreadyRevealed.includes(index)) {
+            flipCard.classList.add('flipped');
+        }
+
+        // Adapter la hauteur du dos de carte après le chargement de l'image
+        setTimeout(() => {
+            const cardHeight = cardEl.offsetHeight;
+            if (cardHeight > 0) {
+                front.style.height = cardHeight + 'px';
+            }
+        }, 100);
+
         // Click pour retourner
-        flipCard.onclick = () => {
+        flipCard.onclick = async () => {
             if(!flipCard.classList.contains('flipped')) {
                 flipCard.classList.add('flipped');
                 cardsRevealed++;
+                
+                // Sauvegarder la carte révélée dans Firestore
+                alreadyRevealed.push(index);
+                const user = auth.currentUser;
+                if (user) {
+                    try {
+                        await updateDoc(doc(db, "players", user.uid), {
+                            boosterRevealedCards: alreadyRevealed
+                        });
+                    } catch (e) {
+                        console.error("Erreur sauvegarde révélation:", e);
+                    }
+                }
+                
                 // Si tout est révélé, on montre le bouton OK
                 if(cardsRevealed === tempBoosterCards.length) {
                     closeBtn.style.display = 'block';
@@ -501,11 +556,32 @@ function openBoosterVisual() {
 
         container.appendChild(flipCard);
     });
+    
+    // Si toutes les cartes sont déjà révélées, afficher le bouton directement
+    if (cardsRevealed === tempBoosterCards.length) {
+        closeBtn.style.display = 'block';
+    }
 }
 
-window.closeBooster = () => {
+window.closeBooster = async () => {
     document.getElementById('booster-overlay').style.display = 'none';
     const btn = document.getElementById('btn-draw');
+    
+    // Nettoyer les données de booster en cours dans Firestore
+    const user = auth.currentUser;
+    if (user) {
+        try {
+            await updateDoc(doc(db, "players", user.uid), {
+                currentBooster: [],
+                boosterRevealedCards: []
+            });
+        } catch (e) {
+            console.error("Erreur nettoyage booster:", e);
+        }
+    }
+    
+    // Réinitialiser les cartes temporaires
+    tempBoosterCards = [];
     
     // Si admin, on réactive le bouton tout de suite
     if (auth.currentUser && auth.currentUser.email === ADMIN_EMAIL) {
