@@ -1,5 +1,5 @@
 // Service Worker pour PWA
-const CACHE_NAME = 'poke-tcg-v3';
+const CACHE_NAME = 'poke-tcg-v4';
 const urlsToCache = [
   '/',
   '/index.html',
