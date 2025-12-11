@@ -1063,6 +1063,7 @@ window.revealAllCards = async () => {
 
 // Capturer l'écran de l'ouverture
 window.screenshotBooster = async () => {
+    const overlay = document.getElementById('booster-overlay');
     const container = document.getElementById('booster-cards-container');
     const title = document.querySelector('.opening-title');
     const actions = document.querySelector('.booster-actions');
@@ -1078,34 +1079,52 @@ window.screenshotBooster = async () => {
     closeBtn.style.display = 'none';
     
     try {
-        // Utiliser html2canvas si disponible, sinon fallback
+        // Attendre que le DOM soit mis à jour
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Utiliser html2canvas si disponible
         if (typeof html2canvas !== 'undefined') {
-            const canvas = await html2canvas(container, {
+            const canvas = await html2canvas(overlay, {
                 backgroundColor: '#2c3e50',
                 scale: 2,
-                logging: false
+                logging: false,
+                useCORS: true,
+                allowTaint: true,
+                width: overlay.scrollWidth,
+                height: overlay.scrollHeight,
+                windowWidth: overlay.scrollWidth,
+                windowHeight: overlay.scrollHeight
             });
             
+            // Télécharger l'image
             canvas.toBlob(blob => {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `booster-${Date.now()}.png`;
-                a.click();
-                URL.revokeObjectURL(url);
-            });
+                if (blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `booster-${Date.now()}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    window.showPopup("✅ Capture réussie", "L'image a été téléchargée !");
+                } else {
+                    window.showPopup("Erreur", "Impossible de créer l'image. Utilisez 'Impr écran'.");
+                }
+            }, 'image/png');
         } else {
-            // Fallback: copier dans le presse-papier si possible
-            window.showPopup("Info", "Utilisez la touche 'Impr écran' de votre clavier pour capturer l'écran.");
+            window.showPopup("Info", "Bibliothèque html2canvas non chargée. Utilisez 'Impr écran'.");
         }
     } catch (e) {
         console.error("Erreur capture:", e);
         window.showPopup("Erreur", "Impossible de capturer. Utilisez 'Impr écran' sur votre clavier.");
     } finally {
-        // Restaurer les boutons
-        title.style.display = originalTitleDisplay;
-        actions.style.display = originalActionsDisplay;
-        closeBtn.style.display = originalCloseBtnDisplay;
+        // Restaurer les boutons après un délai
+        setTimeout(() => {
+            title.style.display = originalTitleDisplay;
+            actions.style.display = originalActionsDisplay;
+            closeBtn.style.display = originalCloseBtnDisplay;
+        }, 500);
     }
 };
 
