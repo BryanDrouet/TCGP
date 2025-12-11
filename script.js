@@ -6,6 +6,7 @@ import { getFirestore, doc, setDoc, updateDoc, arrayUnion, getDoc, collection, g
 const Logger = {
     logs: [],
     maxLogs: 100,
+    maxStoredLogs: 50,
     
     log(level, message, data = null) {
         const timestamp = new Date().toISOString();
@@ -34,9 +35,9 @@ const Logger = {
         
         // Stocker dans localStorage pour persistance
         try {
-            localStorage.setItem('app_logs', JSON.stringify(this.logs.slice(-50)));
+            localStorage.setItem('app_logs', JSON.stringify(this.logs.slice(-this.maxStoredLogs)));
         } catch (e) {
-            // Ignore si localStorage est plein
+            console.warn('Impossible de sauvegarder les logs dans localStorage:', e.message);
         }
     },
     

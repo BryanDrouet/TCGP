@@ -56,8 +56,17 @@ jobs:
       
       - name: Run npm audit
         if: steps.check-package.outputs.has_package == 'true'
-        run: npm audit --audit-level=moderate
-        continue-on-error: true
+        run: |
+          # Run audit and capture output
+          npm audit --audit-level=high || EXIT_CODE=$?
+          # Exit code 0 means no vulnerabilities
+          # Exit code 1 means vulnerabilities found
+          # We allow moderate and low vulnerabilities to pass
+          if [ "${EXIT_CODE:-0}" -gt 1 ]; then
+            echo "npm audit failed with unexpected error"
+            exit 1
+          fi
+        continue-on-error: false
   
   responsive-design-check:
     name: Responsive Design Validation
@@ -144,11 +153,19 @@ jobs:
         run: |
           echo "Checking for images without alt attributes..."
           for file in $(find . -name "*.html" -not -path "./node_modules/*"); do
-            # Check for img tags without alt attribute
-            if grep -P '<img(?![^>]*\balt=)' "$file"; then
-              echo "⚠ $file may have images without alt attributes"
-            else
+            # Check for img tags without alt attribute using awk
+            if awk '/<img[^>]*>/ {
+              if (!/alt=/) {
+                print "Warning: Image without alt in line " NR
+                found=1
+              }
+            }
+            END {
+              if (found) exit 1
+            }' "$file"; then
               echo "✓ $file images check passed"
+            else
+              echo "⚠ $file may have images without alt attributes (check warnings above)"
             fi
           done
       
