@@ -87,11 +87,13 @@ window.Logger = Logger;
 
 // --- ENREGISTREMENT SERVICE WORKER (PWA) ---
 let deferredPrompt = null;
+let swRegistration = null;
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
             .then(registration => {
+                swRegistration = registration;
                 Logger.info('Service Worker enregistré', { scope: registration.scope });
             })
             .catch(error => {
@@ -1354,6 +1356,12 @@ function startTimer(durationMs, uid = null) {
         remaining -= 1000;
         if (remaining <= 0) {
             clearInterval(cooldownInterval);
+            // Send notification when packs are ready (with error handling)
+            try {
+                sendPacksReadyNotification();
+            } catch (error) {
+                Logger.error('Erreur lors de l\'envoi de la notification de packs prêts', error);
+            }
             // Re-vérifier les packs disponibles
             if (uid) checkCooldown(uid);
             else enableBoosterButton(true);
@@ -1380,12 +1388,105 @@ function enableBoosterButton(enabled) {
 }
 
 // --- NOTIFICATIONS ---
+const NOTIFICATION_PACKS_READY_TITLE = "Poké-TCG - Packs disponibles ! 🎉";
+const NOTIFICATION_PACKS_READY_BODY = "Intéressant ! Vos packs sont maintenant disponibles. Revenez vite pour les ouvrir !";
+const NOTIFICATION_PACKS_READY_BODY_SHORT = "Intéressant ! Vos packs sont maintenant disponibles.";
+
+function sendPacksReadyNotification() {
+    // Only send notification if permission is granted
+    if (Notification.permission !== "granted") {
+        Logger.debug('Notification ignorée: permission non accordée');
+        return;
+    }
+    
+    try {
+        if (swRegistration) {
+            // Use service worker notification for better mobile support
+            swRegistration.showNotification(NOTIFICATION_PACKS_READY_TITLE, {
+                body: NOTIFICATION_PACKS_READY_BODY,
+                icon: "favicon.ico",
+                badge: "favicon.ico",
+                tag: "packs-ready",
+                requireInteraction: false,
+                vibrate: [200, 100, 200],
+                data: {
+                    url: window.location.href,
+                    dateOfArrival: Date.now()
+                }
+            });
+            Logger.info('Notification envoyée: packs disponibles');
+        } else if ('Notification' in window) {
+            // Fallback to basic notification
+            const notification = new Notification(NOTIFICATION_PACKS_READY_TITLE, {
+                body: NOTIFICATION_PACKS_READY_BODY_SHORT,
+                icon: "favicon.ico"
+            });
+            
+            notification.onclick = () => {
+                window.focus();
+                notification.close();
+            };
+            
+            Logger.info('Notification basique envoyée: packs disponibles');
+        }
+    } catch (error) {
+        Logger.error('Erreur lors de l\'envoi de la notification', error);
+    }
+}
+
 window.requestNotification = async () => {
-    if (!("Notification" in window)) return;
-    const permission = await Notification.requestPermission();
-    updateBellIcon();
-    if (permission === "granted") {
-        new Notification("Poké-TCG", { body: "Notifications activées !", icon: "icons/fire.svg" });
+    if (!("Notification" in window)) {
+        Logger.warn('Les notifications ne sont pas supportées par ce navigateur');
+        return;
+    }
+    
+    try {
+        const permission = await Notification.requestPermission();
+        updateBellIcon();
+        
+        if (permission === "granted") {
+            Logger.info('Permission de notification accordée');
+            
+            // Save notification preference to user profile
+            const user = auth.currentUser;
+            if (user) {
+                try {
+                    await setDoc(doc(db, "players", user.uid), {
+                        notificationsEnabled: true
+                    }, { merge: true });
+                } catch (error) {
+                    Logger.error('Erreur lors de la sauvegarde de la préférence de notification', error);
+                }
+            }
+            
+            // Show test notification using Service Worker
+            if (swRegistration) {
+                swRegistration.showNotification("Poké-TCG", {
+                    body: "Notifications activées ! Vous serez averti quand vos packs seront disponibles.",
+                    icon: "favicon.ico",
+                    badge: "favicon.ico",
+                    tag: "test-notification",
+                    requireInteraction: false,
+                    vibrate: [200, 100, 200]
+                });
+            } else {
+                // Fallback to basic notification
+                new Notification("Poké-TCG", { 
+                    body: "Notifications activées !", 
+                    icon: "favicon.ico" 
+                });
+            }
+            
+            window.showPopup("Notifications activées", "Vous recevrez une notification quand vos packs seront prêts !");
+        } else if (permission === "denied") {
+            Logger.warn('Permission de notification refusée');
+            window.showPopup("Notifications refusées", "Vous avez refusé les notifications. Vous pouvez les activer dans les paramètres de votre navigateur.");
+        } else {
+            Logger.info('Permission de notification non accordée (dismissed)');
+        }
+    } catch (error) {
+        Logger.error('Erreur lors de la demande de permission de notification', error);
+        window.showPopup("Erreur", "Impossible d'activer les notifications. Veuillez réessayer.");
     }
 };
 
