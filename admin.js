@@ -106,7 +106,17 @@ window.resetCooldown = async (uid, email) => {
 
 window.resetPlayer = async (uid, email) => {
     if (!confirm(`Vider tout le deck de ${email} ?`)) return;
-    try { await updateDoc(doc(db, "players", uid), { collection: [], lastDrawTime: 0, packsByGen: {} }); window.showPopup("Succès", "Deck vidé."); loadAllPlayers(); } catch (e) { window.showPopup("Erreur", e.message); }
+    try { 
+        await updateDoc(doc(db, "players", uid), { 
+            collection: [], 
+            lastDrawTime: 0, 
+            packsByGen: {} 
+        }); 
+        window.showPopup("Succès", "Deck vidé."); 
+        loadAllPlayers(); 
+    } catch (e) { 
+        window.showPopup("Erreur", e.message); 
+    }
 };
 
 window.deleteAccount = async (uid, email) => {

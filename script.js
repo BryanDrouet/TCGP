@@ -1100,7 +1100,7 @@ async function checkCooldown(uid) {
         
         // Si le cooldown est passé ET qu'il n'y a plus de packs, régénérer TOUS les packs
         const wasZero = availablePacks <= 0;
-        if (availablePacks <= 0 && diff >= cooldownMs) {
+        if (wasZero && diff >= cooldownMs) {
             availablePacks = await regeneratePacksForGen(uid, currentGen, packsByGen);
         }
         
