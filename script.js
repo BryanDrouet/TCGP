@@ -451,6 +451,7 @@ async function fetchUserCollection(uid) {
             await setDoc(doc(db, "players", uid), {
                 email: auth.currentUser.email,
                 collection: [],
+                packsByGen: {},
                 lastDrawTime: 0,
                 availablePacks: PACKS_PER_COOLDOWN,
                 role: 'player'
@@ -1169,6 +1170,20 @@ window.closeBooster = async () => {
 };
 
 // --- COOLDOWN PAR GÉNÉRATION ---
+// Helper pour régénérer les packs d'une génération
+async function regeneratePacksForGen(uid, currentGen, packsByGen) {
+    packsByGen[currentGen] = {
+        availablePacks: PACKS_PER_COOLDOWN,
+        lastDrawTime: 0
+    };
+    
+    await setDoc(doc(db, "players", uid), { 
+        packsByGen: packsByGen
+    }, { merge: true });
+    
+    return PACKS_PER_COOLDOWN;
+}
+
 async function checkCooldown(uid) {
     const genSelect = document.getElementById('gen-select');
     const currentGen = genSelect ? genSelect.value : 'gen7';
@@ -1185,20 +1200,10 @@ async function checkCooldown(uid) {
         const diff = Date.now() - lastDraw;
         const cooldownMs = COOLDOWN_MINUTES * 60 * 1000;
         
-        // Si le cooldown est passé, régénérer TOUS les packs
-        const wasZero = availablePacks === 0;
-        if (diff >= cooldownMs) {
-            availablePacks = PACKS_PER_COOLDOWN;
-            
-            // Mettre à jour Firebase pour cette génération
-            packsByGen[currentGen] = {
-                availablePacks: PACKS_PER_COOLDOWN,
-                lastDrawTime: genData.lastDrawTime
-            };
-            
-            await setDoc(doc(db, "players", uid), { 
-                packsByGen: packsByGen
-            }, { merge: true });
+        // Si le cooldown est passé ET qu'il n'y a plus de packs, régénérer TOUS les packs
+        const wasZero = availablePacks <= 0;
+        if (wasZero && diff >= cooldownMs) {
+            availablePacks = await regeneratePacksForGen(uid, currentGen, packsByGen);
         }
         
         // Afficher le nombre de packs disponibles avec animation si régénération
@@ -1209,7 +1214,16 @@ async function checkCooldown(uid) {
         } else {
             // Calculer le temps restant avant la régénération complète
             const timeToNextPack = cooldownMs - diff;
-            startTimer(timeToNextPack, uid);
+            // S'assurer que le timer n'est jamais négatif
+            if (timeToNextPack > 0) {
+                startTimer(timeToNextPack, uid);
+            } else {
+                // Si le temps est déjà passé mais qu'on arrive ici, forcer la régénération
+                // (Ne devrait normalement pas arriver grâce au check ci-dessus)
+                availablePacks = await regeneratePacksForGen(uid, currentGen, packsByGen);
+                updatePacksDisplay(availablePacks, true);
+                enableBoosterButton(true);
+            }
         }
     } else {
         updatePacksDisplay(PACKS_PER_COOLDOWN);
