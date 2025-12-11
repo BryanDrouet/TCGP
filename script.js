@@ -4,7 +4,8 @@ import { getFirestore, doc, setDoc, updateDoc, arrayUnion, getDoc, collection, g
 
 // --- 1. CONFIGURATION ---
 const ADMIN_EMAIL = "bryan.drouet24@gmail.com"; 
-const COOLDOWN_MINUTES = 5; 
+const COOLDOWN_MINUTES = 3;
+const PACKS_PER_COOLDOWN = 3; 
 
 // TA CONFIG FIREBASE (Celle que tu m'as donnée)
 const firebaseConfig = {
@@ -176,6 +177,11 @@ window.closePopup = () => {
 // --- AFFICHAGE DES PROBABILITÉS ---
 window.showDropRates = () => {
     const packInfo = `
+<strong>🎁 SYSTÈME DE PACKS :</strong>
+• Vous disposez de 3 packs maximum
+• 1 pack se régénère toutes les ${COOLDOWN_MINUTES} minutes
+• Vous pouvez ouvrir un pack dès qu'il est disponible
+
 <strong>🎲 TAILLE DU PACK :</strong>
 • 50% de chance d'obtenir 4 cartes
 • 50% de chance d'obtenir 5 cartes
@@ -283,6 +289,7 @@ async function fetchUserCollection(uid) {
                 email: auth.currentUser.email,
                 collection: [],
                 lastDrawTime: 0,
+                availablePacks: PACKS_PER_COOLDOWN,
                 role: 'player'
             });
             userCollection = [];
@@ -426,7 +433,12 @@ function renderBinder() {
             .map(([rarity, stats]) => {
                 const label = labels[rarity];
                 const percent = Math.round((stats.owned / stats.total) * 100);
-                return `<span style="color: ${stats.owned === stats.total ? '#4CAF50' : '#999'};">${label.emoji} ${label.name}: ${stats.owned}/${stats.total} (${percent}%)</span>`;
+                const isComplete = stats.owned === stats.total;
+                return `<div class="rarity-stat-badge ${isComplete ? 'complete' : 'incomplete'}">
+                    <span class="emoji">${label.emoji}</span>
+                    <span>${label.name}: ${stats.owned}/${stats.total}</span>
+                    <span class="percent">(${percent}%)</span>
+                </div>`;
             })
             .join('');
     }
@@ -630,7 +642,20 @@ window.drawCard = async () => {
             currentBooster: tempBoosterCards, // Sauvegarde de l'ouverture en cours
             boosterRevealedCards: [] // Aucune carte révélée au départ
         };
-        if (!isAdmin) updateData.lastDrawTime = Date.now();
+        
+        if (!isAdmin) {
+            // Décrémenter les packs disponibles
+            const snap = await getDoc(doc(db, "players", user.uid));
+            let availablePacks = snap.exists() ? (snap.data().availablePacks ?? PACKS_PER_COOLDOWN) : PACKS_PER_COOLDOWN;
+            availablePacks = Math.max(0, availablePacks - 1);
+            
+            updateData.availablePacks = availablePacks;
+            updateData.lastDrawTime = Date.now();
+            
+            // Mettre à jour l'affichage
+            updatePacksDisplay(availablePacks);
+        }
+        
         await updateDoc(doc(db, "players", user.uid), updateData);
 
         // Ajout à la collection locale
@@ -638,8 +663,15 @@ window.drawCard = async () => {
         document.getElementById('card-count').innerText = userCollection.length;
 
         // Gestion Timer
-        if (!isAdmin) startTimer(COOLDOWN_MINUTES * 60 * 1000);
-        else { 
+        if (!isAdmin) {
+            // Si plus de packs disponibles, démarrer le timer
+            const snap = await getDoc(doc(db, "players", user.uid));
+            const availablePacks = snap.exists() ? (snap.data().availablePacks ?? 0) : 0;
+            
+            if (availablePacks === 0) {
+                startTimer(COOLDOWN_MINUTES * 60 * 1000, user.uid);
+            }
+        } else { 
             // Reset bouton pour l'admin (attendra la fermeture du booster)
             // Le bouton sera réactivé dans closeBooster()
         }
@@ -766,17 +798,49 @@ async function checkCooldown(uid) {
     const snap = await getDoc(doc(db, "players", uid));
     if (snap.exists()) {
         const lastDraw = snap.data().lastDrawTime || 0;
+        let availablePacks = snap.data().availablePacks ?? PACKS_PER_COOLDOWN;
+        
         const diff = Date.now() - lastDraw;
         const cooldownMs = COOLDOWN_MINUTES * 60 * 1000;
         
-        if (diff < cooldownMs) startTimer(cooldownMs - diff);
-        else enableBoosterButton(true);
+        // Calculer combien de packs ont été régénérés depuis le dernier draw
+        const packsRegenerated = Math.floor(diff / cooldownMs);
+        availablePacks = Math.min(availablePacks + packsRegenerated, PACKS_PER_COOLDOWN);
+        
+        // Mettre à jour Firebase avec le nouveau compte de packs
+        if (packsRegenerated > 0) {
+            await updateDoc(doc(db, "players", uid), { 
+                availablePacks,
+                lastDrawTime: lastDraw + (packsRegenerated * cooldownMs)
+            });
+        }
+        
+        // Afficher le nombre de packs disponibles
+        updatePacksDisplay(availablePacks);
+        
+        if (availablePacks > 0) {
+            enableBoosterButton(true);
+        } else {
+            // Calculer le temps restant avant le prochain pack
+            const timeToNextPack = cooldownMs - (diff % cooldownMs);
+            startTimer(timeToNextPack, uid);
+        }
     } else {
+        updatePacksDisplay(PACKS_PER_COOLDOWN);
         enableBoosterButton(true);
     }
 }
 
-function startTimer(durationMs) {
+function updatePacksDisplay(count) {
+    const packsDisplay = document.getElementById('packs-available');
+    const packsCount = document.getElementById('packs-count');
+    if (packsDisplay && packsCount) {
+        packsCount.innerText = count;
+        packsDisplay.style.display = 'block';
+    }
+}
+
+function startTimer(durationMs, uid = null) {
     const btn = document.getElementById('btn-draw');
     const display = document.getElementById('cooldown-display');
     const val = document.getElementById('timer-val');
@@ -793,7 +857,9 @@ function startTimer(durationMs) {
         remaining -= 1000;
         if (remaining <= 0) {
             clearInterval(cooldownInterval);
-            enableBoosterButton(true);
+            // Re-vérifier les packs disponibles
+            if (uid) checkCooldown(uid);
+            else enableBoosterButton(true);
             return;
         }
         const m = Math.floor((remaining / 1000 / 60) % 60);
@@ -844,4 +910,4 @@ window.googleLogin = async () => {
 window.signUp = async () => { authUser(createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value)); };
 window.signIn = async () => { try { await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); } catch(e) { window.showPopup("Erreur", e.message); } };
 window.logout = () => signOut(auth);
-async function authUser(promise) { try { const res = await promise; const ref = doc(db, "players", res.user.uid); const snap = await getDoc(ref); if (!snap.exists()) await setDoc(ref, { email: res.user.email, collection: [], lastDrawTime: 0 }); } catch (e) { console.error(e); } }
+async function authUser(promise) { try { const res = await promise; const ref = doc(db, "players", res.user.uid); const snap = await getDoc(ref); if (!snap.exists()) await setDoc(ref, { email: res.user.email, collection: [], lastDrawTime: 0, availablePacks: PACKS_PER_COOLDOWN }); } catch (e) { console.error(e); } }

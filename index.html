@@ -70,6 +70,10 @@
                 <div class="booster-content">CHARGEMENT...</div>
             </button>
             
+            <div id="packs-available" style="display:none; margin: 10px 0; font-weight: bold; color: var(--secondary); font-size: 1.1rem;">
+                🎁 Packs disponibles : <span id="packs-count">0</span>/3
+            </div>
+            
             <button onclick="showDropRates()" class="btn-info" title="Probabilités de drop">
                 <span style="font-size: 1.2rem; font-weight: bold;">ℹ️</span>
             </button>
@@ -78,7 +82,7 @@
                 ⏳ Prochain dans : <span id="timer-val">00:00</span>
             </div>
             
-            <div id="rarity-stats" style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin: 15px 0; font-size: 0.9rem;"></div>
+            <div id="rarity-stats" class="rarity-stats-container"></div>
             
             <div class="toolbar">
                 <div class="search-container">
