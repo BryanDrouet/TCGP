@@ -1,13 +1,13 @@
 // Service Worker pour PWA
 const CACHE_NAME = 'poke-tcg-v5';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/script.js',
-  '/generator.js',
-  '/favicon.ico',
-  '/manifest.json'
+  '/TCGP/',
+  '/TCGP/index.html',
+  '/TCGP/style.css',
+  '/TCGP/script.js',
+  '/TCGP/generator.js',
+  '/TCGP/favicon.ico',
+  '/TCGP/manifest.json'
 ];
 
 // Fonction de logging pour le Service Worker

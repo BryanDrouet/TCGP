@@ -145,7 +145,7 @@ let swRegistration = null;
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('/TCGP/sw.js')
             .then(registration => {
                 swRegistration = registration;
                 Logger.info('Service Worker enregistré', { scope: registration.scope });
@@ -546,6 +546,7 @@ Maximum 2 cartes identiques par pack
 
 // --- AUTHENTIFICATION ---
 // Timeout de sécurité pour le loader - sera initialisé au démarrage
+const AUTH_LOADING_TIMEOUT_MS = 10000; // 10 secondes
 let authLoadingTimeout = null;
 
 // Démarrer le timeout d'authentification
