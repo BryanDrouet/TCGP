@@ -16,10 +16,15 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 window.showPopup = (title, msg) => {
-    document.getElementById('popup-title').innerText = title;
+    const titleEl = document.getElementById('popup-title');
+    if (titleEl) titleEl.innerHTML = title;
     const msgEl = document.getElementById('popup-content') || document.getElementById('popup-msg');
-    msgEl.innerText = msg;
-    document.getElementById('custom-popup-overlay').style.display = 'flex';
+    if (msgEl) {
+        msgEl.innerHTML = String(msg).replace(/\n/g, '<br>');
+        msgEl.style.textAlign = 'left';
+    }
+    const overlay = document.getElementById('custom-popup-overlay');
+    if (overlay) overlay.style.display = 'flex';
 };
 window.closePopup = () => { document.getElementById('custom-popup-overlay').style.display = 'none'; };
 
@@ -51,24 +56,24 @@ window.loadAllPlayers = async () => {
             const data = docSnap.data();
             const role = data.role || 'player';
             let roleColor = '#ccc';
-            let roleIcon = '👤';
+            let roleIcon = '<img src="assets/icons/user.svg" class="title-icon" alt="user">';
             if (role === 'admin') {
                 roleColor = '#ffd700';
-                roleIcon = '👑';
+                roleIcon = '<img src="assets/icons/crown.svg" class="title-icon" alt="admin">';
             } else if (role === 'vip') {
                 roleColor = '#00e676';
-                roleIcon = '💎';
+                roleIcon = '<img src="assets/icons/gem.svg" class="title-icon" alt="vip">';
             }
 
             const tr = document.createElement('tr');
-            let actions = `
-                <button onclick="resetCooldown('${docSnap.id}', '${data.email}')" class="btn-action btn-cooldown">⏳ Reset</button>
-                <button onclick="resetPlayer('${docSnap.id}', '${data.email}')" class="btn-action btn-reset">⚠️ Deck</button>
-                <button onclick="deleteAccount('${docSnap.id}', '${data.email}')" class="btn-action btn-delete">❌ DEL</button>
+                let actions = `
+                <button onclick="resetCooldown('${docSnap.id}', '${data.email}')" class="btn-action btn-cooldown"><img src="assets/icons/hourglass.svg" class="title-icon" alt="hourglass"> Reset</button>
+                <button onclick="resetPlayer('${docSnap.id}', '${data.email}')" class="btn-action btn-reset"><img src="assets/icons/triangle-alert.svg" class="title-icon" alt="warn"> Deck</button>
+                <button onclick="deleteAccount('${docSnap.id}', '${data.email}')" class="btn-action btn-delete"><img src="assets/icons/x.svg" class="title-icon" alt="del"> DEL</button>
             `;
             // Afficher le bouton rôle seulement si ce n'est pas un admin
             if (role !== 'admin') {
-                let roleButtonEmoji = role === 'vip' ? '⬇️' : '⬆️';
+                let roleButtonEmoji = role === 'vip' ? '<img src="assets/icons/arrow-down-from-line.svg" class="title-icon" alt="down">' : '<img src="assets/icons/arrow-up-from-line.svg" class="title-icon" alt="up">';
                 let roleButtonLabel = role === 'vip' ? 'Rétrograder' : 'VIP';
                 actions = `<button onclick="toggleRole('${docSnap.id}', '${role}')" class="btn-action btn-role" style="background:#8e44ad">${roleButtonEmoji} ${roleButtonLabel}</button>` + actions;
             }
@@ -124,9 +129,9 @@ window.resetCooldown = async (uid, email) => {
 
         await updateDoc(doc(db, "players", uid), {
             packsByGen: packsByGen,
-            adminNotification: {
+                adminNotification: {
                 type: 'cooldown_reset',
-                message: '⚡ Tous vos cooldowns ont été réinitialisés par un administrateur !',
+                message: '<img src="assets/icons/zap.svg" class="title-icon" alt="zap"> Tous vos cooldowns ont été réinitialisés par un administrateur !',
                 timestamp: Date.now()
             }
         });

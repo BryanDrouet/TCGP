@@ -141,6 +141,67 @@ Logger.info('Appareil détecté', DeviceInfo.info);
 // Exposer DeviceInfo globalement pour debugging
 window.DeviceInfo = DeviceInfo;
 
+// --- URL STATE HELPERS ---
+function readUrlParams() {
+    return new URLSearchParams(window.location.search);
+}
+
+function applyUrlState() {
+    const params = readUrlParams();
+    const gen = params.get('gen');
+    const q = params.get('q');
+    const s = params.get('s');
+    const rarity = params.get('rarity');
+    const booster = params.get('booster');
+    const adminPreview = params.get('admin_preview');
+
+    const genSelect = document.getElementById('gen-select');
+    if (genSelect && gen) genSelect.value = gen;
+    const packQty = document.getElementById('pack-quantity');
+    if (packQty && q) packQty.value = q;
+    const searchInput = document.getElementById('search-input');
+    if (searchInput && s !== null) searchInput.value = s;
+    // Do not persist owned/missing in URL per user request
+
+    // Admin preview (show all) - only meaningful if the control exists
+    const adminPreviewEl = document.getElementById('admin-show-all');
+    if (adminPreviewEl && adminPreview !== null) {
+        adminPreviewEl.checked = (adminPreview === '1' || adminPreview === 'true');
+        window.adminShowAllMode = adminPreviewEl.checked;
+    }
+
+    // Apply rarity filter (may be invalid for some gens; will be validated after gen loads)
+    window.selectedRarityFilter = rarity ? rarity : null;
+
+    // Booster open flag
+    window._openBoosterViaUrl = (booster === '1');
+}
+
+function pushUrlState(replace = true) {
+    try {
+        const params = readUrlParams();
+        const genSelect = document.getElementById('gen-select');
+        if (genSelect) params.set('gen', genSelect.value);
+        const packQty = document.getElementById('pack-quantity');
+        if (packQty) params.set('q', packQty.value);
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            const v = searchInput.value.trim();
+            if (v) params.set('s', v); else params.delete('s');
+        }
+        // Do not include owned/missing in URL per user request
+        // admin preview flag
+        if (window.adminShowAllMode) params.set('admin_preview', '1'); else params.delete('admin_preview');
+        if (window.selectedRarityFilter) params.set('rarity', window.selectedRarityFilter); else params.delete('rarity');
+        if (window._openBooster) params.set('booster', '1'); else params.delete('booster');
+
+        const newUrl = window.location.pathname + (params.toString() ? ('?' + params.toString()) : '');
+        if (replace) history.replaceState(null, '', newUrl); else history.pushState(null, '', newUrl);
+    } catch (e) {
+        console.warn('pushUrlState failed', e);
+    }
+}
+
 // --- ENREGISTREMENT SERVICE WORKER (PWA) ---
 let deferredPrompt = null;
 let swRegistration = null;
@@ -203,6 +264,7 @@ window.addEventListener('appinstalled', () => {
 // --- 1. CONFIGURATION ---
 const ADMIN_EMAIL = "bryan.drouet24@gmail.com";
 const COOLDOWN_MINUTES = 7;
+const VIP_COOLDOWN_MINUTES = 4; // cooldown spécifique pour les VIP
 const PACKS_PER_COOLDOWN = 3;
 const POINTS_PER_CARD = 1;
 const POINTS_FOR_BONUS_PACK = 30;
@@ -251,19 +313,19 @@ getRedirectResult(auth)
             message: error.message
         });
         
-        const authMsg = document.getElementById('auth-msg');
+            const authMsg = document.getElementById('auth-msg');
         if (authMsg) {
             authMsg.style.color = '#ff6b6b';
             if (error.code === 'auth/popup-blocked') {
-                authMsg.innerText = '⚠️ Popups bloquées. Réessayez.';
+                    authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Popups bloquées. Réessayez.';
             } else if (error.code === 'auth/popup-closed-by-user') {
-                authMsg.innerText = '⚠️ Connexion annulée';
+                    authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Connexion annulée';
             } else if (error.code === 'auth/cancelled-popup-request') {
-                authMsg.innerText = '⚠️ Connexion annulée';
+                    authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Connexion annulée';
             } else if (error.code === 'auth/account-exists-with-different-credential') {
-                authMsg.innerText = '⚠️ Ce compte existe déjà avec une autre méthode de connexion';
+                    authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Ce compte existe déjà avec une autre méthode de connexion';
             } else {
-                authMsg.innerText = '⚠️ Erreur de connexion: ' + error.message;
+                    authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Erreur de connexion: ' + error.message;
             }
         }
     });
@@ -292,7 +354,7 @@ const GEN_LIST = [
     { id: "gen5", name: "Gen 5 - Unys" },
     { id: "gen6", name: "Gen 6 - Kalos" },
     { id: "gen7", name: "Gen 7 - Alola" },
-    { id: "special_bryan", name: "🌟 Pack Spécial Bryan" }
+    { id: "special_bryan", name: "Pack Spécial Bryan" }
 ];
 
 const GAME_CONFIG = {
@@ -341,7 +403,7 @@ window.onload = () => {
         // Afficher un avertissement pour les utilisateurs
         const warningHtml = `
             <div style="background: #ff9800; color: white; padding: 10px; text-align: center; font-size: 0.9rem;">
-                ⚠️ Pour une meilleure expérience, ouvrez ce site dans votre navigateur principal (Safari, Chrome, Firefox).
+                <img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Pour une meilleure expérience, ouvrez ce site dans votre navigateur principal (Safari, Chrome, Firefox).
             </div>
         `;
         
@@ -391,7 +453,7 @@ window.showAuthStatusPopup = (statusText = 'Connexion en cours...') => {
         <p id="auth-msg" class="auth-msg">${statusText}</p>
         <p class="auth-note">Les VIPs ont un cooldown de <strong>4 minutes</strong>.</p>
         <div style="display:flex; justify-content:flex-end;">
-            <button class="btn-tertiary popup-action-btn" onclick="closePopup();">⬅ Retour au Jeu</button>
+            <button class="btn-tertiary popup-action-btn" onclick="closePopup();"><img src="assets/icons/arrow-left-from-line.svg" class="icon-inline" alt="back"> Retour au Jeu</button>
         </div>
     `;
     window.showPopup('Connexion', html);
@@ -401,11 +463,11 @@ window.showAuthStatusPopup = (statusText = 'Connexion en cours...') => {
 function showProfileMenu() {
     const menuHtml = `
         <div style="display: flex; flex-direction: column; gap: 15px;">
-            <button onclick="logout()" class="btn-secondary" style="width: 100%;">🚪 Déconnexion
+            <button onclick="logout()" class="btn-secondary" style="width: 100%;"><img src="assets/icons/log-out.svg" class="icon-inline" alt="logout"> Déconnexion
             </button>
-            <button onclick="resetAccount()" class="btn-secondary" style="width: 100%;">🔄 Réinitialiser mon compte
+            <button onclick="resetAccount()" class="btn-secondary" style="width: 100%;"><img src="assets/icons/refresh-ccw.svg" class="icon-inline" alt="reset"> Réinitialiser mon compte
             </button>
-            <button onclick="deleteAccount()" class="btn-tertiary" style="width: 100%; background: var(--danger); border-color: #a82929; box-shadow: 0 4px 0 #a82929;">❌ Supprimer mon compte
+            <button onclick="deleteAccount()" class="btn-tertiary" style="width: 100%; background: var(--danger); border-color: #a82929; box-shadow: 0 4px 0 #a82929;"><img src="assets/icons/x.svg" class="icon-inline" alt="delete"> Supprimer mon compte
             </button>
         </div>
     `;
@@ -414,13 +476,31 @@ function showProfileMenu() {
     const title = document.getElementById('popup-title');
     const msg = document.getElementById('popup-content') || document.getElementById('popup-msg');
     
-    title.innerText = "👤 MON PROFIL";
+    title.innerHTML = "<img src=\"assets/icons/user.svg\" class=\"icon-inline\" alt=\"user\"> MON PROFIL";
     msg.innerHTML = menuHtml;
     popup.style.display = 'flex';
 }
 
+// Ajuste les pourcentages de drop pour les VIP (favorise rare/ultra/secret)
+function adjustRatesForVip(rates) {
+    // Multiplicateurs par rareté
+    const mult = {
+        'common': 0.8,
+        'uncommon': 0.9,
+        'rare': 1.2,
+        'ultra_rare': 1.4,
+        'secret': 1.6
+    };
+    // Copier et appliquer
+    const adjusted = rates.map(r => ({ ...r, chance: (r.chance || 0) * (mult[r.type] || 1) }));
+    // Normaliser pour que la somme soit identique (ou 100)
+    const sum = adjusted.reduce((s, x) => s + x.chance, 0) || 1;
+    const factor = (rates.reduce((s, x) => s + x.chance, 0) || 100) / sum;
+    return adjusted.map(a => ({ ...a, chance: a.chance * factor }));
+}
+
 window.resetAccount = async () => {
-    if (!confirm('⚠️ Êtes-vous sûr de vouloir réinitialiser votre compte ? Toutes vos cartes seront supprimées !')) {
+    if (!confirm('ATTENTION — Êtes-vous sûr de vouloir réinitialiser votre compte ? Toutes vos cartes seront supprimées !')) {
         return;
     }
     
@@ -436,7 +516,7 @@ window.resetAccount = async () => {
         }, { merge: true });
         
         closePopup();
-        window.showPopup("✅ Compte réinitialisé", "Votre compte a été réinitialisé avec succès. Rechargez la page.");
+        window.showPopup("<img src='assets/icons/check.svg' class='icon-inline' alt='ok'> Compte réinitialisé", "Votre compte a été réinitialisé avec succès. Rechargez la page.");
         setTimeout(() => location.reload(), 2000);
     } catch (e) {
         window.showPopup("Erreur", "Impossible de réinitialiser le compte: " + e.message);
@@ -444,11 +524,11 @@ window.resetAccount = async () => {
 };
 
 window.deleteAccount = async () => {
-    if (!confirm('⚠️ ATTENTION ! Voulez-vous vraiment SUPPRIMER COMPLÈTEMENT votre compte ? Cette action est IRRÉVERSIBLE !')) {
+    if (!confirm('ATTENTION — Voulez-vous vraiment SUPPRIMER COMPLÈTEMENT votre compte ? Cette action est IRRÉVERSIBLE !')) {
         return;
     }
     
-    if (!confirm('❌ Dernière confirmation : Supprimer définitivement votre compte ?')) {
+    if (!confirm('Dernière confirmation : Supprimer définitivement votre compte ?')) {
         return;
     }
     
@@ -464,7 +544,7 @@ window.deleteAccount = async () => {
         await user.delete();
         
         closePopup();
-        window.showPopup("✅ Compte supprimé", "Votre compte a été supprimé avec succès.");
+        window.showPopup("<img src='assets/icons/check.svg' class='icon-inline' alt='ok'> Compte supprimé", "Votre compte a été supprimé avec succès.");
         setTimeout(() => location.reload(), 2000);
     } catch (e) {
         if (e.code === 'auth/requires-recent-login') {
@@ -510,8 +590,8 @@ window.updatePackQuantity = async () => {
         }
     }
     
-    // Toujours mettre à jour le texte du bouton (sauf si en mode PATIENTEZ)
-    if (btn && !btn.innerHTML.includes('PATIENTEZ') && !btn.innerHTML.includes('⏳')) {
+    // Toujours mettre à jour le texte du bouton (sauf si en mode PATIENTEZ ou affichage timer)
+    if (btn && !btn.innerHTML.includes('PATIENTEZ') && !btn.innerHTML.includes('Prochain dans')) {
         if (quantity > 1) {
             btn.innerHTML = `<div class="booster-content">OUVRIR ${quantity} BOOSTERS</div>`;
         } else {
@@ -529,34 +609,34 @@ window.updatePackQuantity = async () => {
 // --- AFFICHAGE DES PROBABILITÉS ---
 window.showDropRates = () => {
     const packInfo = `
-<h3>🎁 SYSTÈME DE PACKS :</h3>
+<h3 class="h3-icon"><img src="assets/icons/gift.svg" class="icon-inline" alt="gift"><span>SYSTÈME DE PACKS :</span></h3>
 • Vous disposez de 3 packs maximum par génération
 • Les 3 packs se régénèrent toutes les ${COOLDOWN_MINUTES} minutes
 • Vous pouvez ouvrir plusieurs packs d'un coup
 • Chaque génération a son propre cooldown indépendant
 
-<h3>🎲 TAILLE DU PACK :</h3>
+<h3 class="h3-icon"><img src="assets/icons/dices.svg" class="icon-inline" alt="dices"><span>TAILLE DU PACK :</span></h3>
 • 75% de chance d'obtenir 4 cartes
 • 25% de chance d'obtenir 5 cartes
 
-<h3>📊 PROBABILITÉS DE RARETÉ (Cartes 1-4) :</h3>
-• ⚪ Commune : 56%
-• 🟢 Peu Commune : 26%
-• 🔵 Rare : 14%
-• 🟣 Ultra Rare : 3.8%
-• ⭐ Secrète : 0.2%
+<h3 class="h3-icon"><img src="assets/icons/chart-column.svg" class="icon-inline" alt="chart"><span>PROBABILITÉS DE RARETÉ (Cartes 1-4) :</span></h3>
+• <span class="dot dot-common">⬤</span> Commune : 56%
+• <span class="dot dot-uncommon">⬤</span> Peu Commune : 26%
+• <span class="dot dot-rare">⬤</span> Rare : 14%
+• <span class="dot dot-ultra">⬤</span> Ultra Rare : 3.8%
+• <img src="assets/icons/star.svg" class="icon-inline" alt="secret"> Secrète : 0.2%
 
-<h3>✨ 5ème CARTE (si pack de 5) :</h3>
-• 🔵 Rare : 68%
-• 🟣 Ultra Rare : 30%
-• ⭐ Secrète : 2%
+<h3 class="h3-icon"><img src="assets/icons/star.svg" class="icon-inline" alt="star"><span>5ème CARTE (si pack de 5) :</span></h3>
+• <span class="dot dot-rare">⬤</span> Rare : 68%
+• <span class="dot dot-ultra">⬤</span> Ultra Rare : 30%
+• <img src="assets/icons/star.svg" class="icon-inline" alt="secret"> Secrète : 2%
 (Pas de commune ou peu commune)
 
-<h3>🚫 LIMITE :</h3>
+<h3 class="h3-icon"><img src="assets/icons/octagon-x.svg" class="icon-inline" alt="limit"><span>LIMITE :</span></h3>
 Maximum 2 cartes identiques par pack
     `.trim();
     
-    window.showPopup("🎮 SYSTÈME DE DROP", packInfo);
+    window.showPopup("SYSTÈME DE DROP", packInfo);
 };
 
 // --- AUTHENTIFICATION ---
@@ -617,7 +697,7 @@ onAuthStateChanged(auth, async (user) => {
             // Vérif Admin (Basique sur email)
             isAdmin = (user.email === ADMIN_EMAIL);
             const adminPreview = document.getElementById('admin-preview-container');
-            if(adminPreview) adminPreview.style.display = isAdmin ? 'block' : 'none';
+            if (adminPreview) adminPreview.style.display = 'block';
             
             // Menu profil au clic sur le profil
             const userProfilePill = document.getElementById('user-profile-pill');
@@ -642,8 +722,8 @@ onAuthStateChanged(auth, async (user) => {
                 filterBinder();
             };
             if (showOwnedEl && showMissingEl) {
-                showOwnedEl.onchange = () => ensureAtLeastOne(showOwnedEl, showMissingEl);
-                showMissingEl.onchange = () => ensureAtLeastOne(showMissingEl, showOwnedEl);
+                showOwnedEl.onchange = () => { ensureAtLeastOne(showOwnedEl, showMissingEl); };
+                showMissingEl.onchange = () => { ensureAtLeastOne(showMissingEl, showOwnedEl); };
             }
 
             // Check Notifications (Visuel uniquement)
@@ -681,6 +761,8 @@ onAuthStateChanged(auth, async (user) => {
             
             // 3. Charger le classeur (Gen par défaut)
             Logger.debug('Chargement classeur');
+            // Apply URL state (gen/filters/qty/search) before loading
+            try { applyUrlState(); } catch (e) { /* silent */ }
             await changeGen(); 
 
             // 4. Vérifier le Cooldown
@@ -711,27 +793,7 @@ onAuthStateChanged(auth, async (user) => {
             window.showPopup("Erreur", errorMessage);
         }
 
-        // 1. Charger la collection
-        await fetchUserCollection(user.uid);
         
-        // 2. Vérifier si un booster est en cours d'ouverture
-        const snap = await getDoc(doc(db, "players", user.uid));
-        if (snap.exists() && snap.data().currentBooster && snap.data().currentBooster.length > 0) {
-            // Restaurer l'ouverture en cours
-            tempBoosterCards = snap.data().currentBooster;
-            const revealedCards = snap.data().boosterRevealedCards || [];
-            openBoosterVisual(revealedCards);
-        }
-
-        // 3. Charger le classeur (Gen par défaut)
-        await changeGen(); 
-
-        // 4. Vérifier le Cooldown
-        if (!isAdmin) await checkCooldown(user.uid);
-        else enableBoosterButton(true);
-
-        // Fin du chargement
-        if(loader) loader.style.display = 'none';
     } else {
         Logger.info('Utilisateur non connecté');
         // Déconnecté
@@ -795,17 +857,18 @@ async function updatePointsDisplay() {
     const genData = packsByGen[currentGen] || { points: 0, bonusPacks: 0 };
     const points = genData.points || 0;
     const bonusPacks = genData.bonusPacks || 0;
-    
+    // Seuil de points pour cet utilisateur (VIP = 20)
+    const pointsForThisUser = (data.role === 'vip') ? 20 : POINTS_FOR_BONUS_PACK;
     // Mettre à jour la valeur des points
     const pointsValueEl = document.getElementById('points-value');
     if (pointsValueEl) {
-        pointsValueEl.textContent = `${points}/${POINTS_FOR_BONUS_PACK}`;
+        pointsValueEl.textContent = `${points}/${pointsForThisUser}`;
     }
     
     // Mettre à jour la barre de progression
     const progressFillEl = document.getElementById('points-progress-fill');
     if (progressFillEl) {
-        const percentage = (points / POINTS_FOR_BONUS_PACK) * 100;
+        const percentage = (points / pointsForThisUser) * 100;
         progressFillEl.style.width = `${percentage}%`;
     }
     
@@ -871,26 +934,26 @@ window.openShop = async () => {
     
     const shopHtml = `
         <div style="text-align: center;">
-            <div style="font-size: 3rem; margin: 20px 0;">🎁</div>
-            <div style="font-size: 1.2rem; margin-bottom: 20px;">
-                <strong>Vos points :</strong> ${points}/${POINTS_FOR_BONUS_PACK}<br>
+            <div style="font-size: 3rem; margin: 20px 0;"><img src="assets/icons/gift.svg" class="icon-inline" alt="gift"></div>
+                <div style="font-size: 1.2rem; margin-bottom: 20px;">
+                <strong>Vos points :</strong> ${points}/${pointsForThisUser}<br>
                 <strong>Boosters bonus disponibles :</strong> ${bonusPacks}
             </div>
             <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin: 20px 0;">
-                <p style="margin: 10px 0;">💎 Chaque carte obtenue vous donne <strong>${POINTS_PER_CARD} point</strong></p>
-                <p style="margin: 10px 0;">🎁 Chaque fois que vous atteignez <strong>${POINTS_FOR_BONUS_PACK} points</strong>, vous gagnez un booster bonus</p>
-                <p style="margin: 10px 0;">✨ Les points excédentaires sont conservés pour le prochain booster</p>
+                <p style="margin: 10px 0;"><img src="assets/icons/gem.svg" class="icon-inline" alt="points"> Chaque carte obtenue vous donne <strong>${POINTS_PER_CARD} point</strong></p>
+                <p style="margin: 10px 0;"><img src="assets/icons/gift.svg" class="icon-inline" alt="gift"> Chaque fois que vous atteignez <strong>${pointsForThisUser} points</strong>, vous gagnez un booster bonus</p>
+                <p style="margin: 10px 0;"><img src="assets/icons/sparkles.svg" class="icon-inline" alt="spark"> Les points excédentaires sont conservés pour le prochain booster</p>
             </div>
             <div style="background: rgba(59, 76, 202, 0.2); padding: 15px; border-radius: 10px; margin-top: 15px; border: 2px solid rgba(59, 76, 202, 0.5);">
-                <p style="color: var(--secondary); font-weight: bold; margin-bottom: 10px;">📊 Progression actuelle</p>
+                <p style="color: var(--secondary); font-weight: bold; margin-bottom: 10px;"><img src="assets/icons/chart-column.svg" class="icon-inline" alt="chart"> Progression actuelle</p>
                 <div style="width: 100%; height: 30px; background: rgba(0,0,0,0.4); border-radius: 15px; overflow: hidden; margin: 10px 0;">
-                    <div style="height: 100%; width: ${(points / POINTS_FOR_BONUS_PACK) * 100}%; background: linear-gradient(90deg, #FFD700 0%, #FFA500 100%); border-radius: 15px; transition: width 0.5s ease;"></div>
+                    <div style="height: 100%; width: ${(points / pointsForThisUser) * 100}%; background: linear-gradient(90deg, #FFD700 0%, #FFA500 100%); border-radius: 15px; transition: width 0.5s ease;"></div>
                 </div>
-                <p style="color: #ccc; font-size: 0.9rem;">${points} / ${POINTS_FOR_BONUS_PACK} points</p>
+                <p style="color: #ccc; font-size: 0.9rem;">${points} / ${pointsForThisUser} points</p>
             </div>
             ${bonusPacks > 0 ? `
                 <button onclick="closePopup(); useBonusPack();" class="btn-primary" style="width: 100%; padding: 15px; margin-top: 20px; font-size: 1.1rem;">
-                    🎁 Utiliser un booster bonus (${bonusPacks} disponible${bonusPacks > 1 ? 's' : ''})
+                    <img src="assets/icons/gift.svg" class="icon-inline" alt="gift"> Utiliser un booster bonus (${bonusPacks} disponible${bonusPacks > 1 ? 's' : ''})
                 </button>
             ` : `
                 <p style="color: #999; margin-top: 20px;">Collectionnez plus de cartes pour gagner des boosters bonus !</p>
@@ -898,7 +961,7 @@ window.openShop = async () => {
         </div>
     `;
     
-    window.showPopup("🛒 BOUTIQUE", shopHtml);
+    window.showPopup("<img src='assets/icons/gift.svg' class='icon-inline' alt='shop'> BOUTIQUE", shopHtml);
 }
 
 // --- LOGIQUE CLASSEUR (BINDER) ---
@@ -915,7 +978,8 @@ window.changeGen = async () => {
     // Ne pas insérer le placeholder dans les stats non plus
     const statsContainer = document.getElementById('rarity-stats');
     if (statsContainer) {
-        statsContainer.innerHTML = '';
+        statsContainer.innerHTML = '<div class="rarity-stat-loading" style="width:100%; text-align:center;">Chargement du classeur...</div>';
+        statsContainer.style.display = 'flex';
     }
 
     currentGenData = []; // Reset des données locales
@@ -962,12 +1026,32 @@ window.changeGen = async () => {
 function renderBinder() {
     const grid = document.getElementById('cards-grid');
     grid.innerHTML = '';
+    // NOTE: don't hide the stats container here — show loading placeholder from changeGen
     
     const searchInput = document.getElementById('search-input');
     const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
     
     const sortSelect = document.getElementById('sort-select');
     const sortType = sortSelect ? sortSelect.value : 'id';
+
+    // Attach listeners to some controls to reflect their state in URL
+    try {
+        const searchInput = document.getElementById('search-input');
+        if (searchInput && !searchInput._urlHooked) {
+            searchInput.addEventListener('input', () => { pushUrlState(); });
+            searchInput._urlHooked = true;
+        }
+        const genSelect = document.getElementById('gen-select');
+        if (genSelect && !genSelect._urlHooked) {
+            genSelect.addEventListener('change', () => { pushUrlState(); });
+            genSelect._urlHooked = true;
+        }
+        const packQty = document.getElementById('pack-quantity');
+        if (packQty && !packQty._urlHooked) {
+            packQty.addEventListener('change', () => { pushUrlState(); });
+            packQty._urlHooked = true;
+        }
+    } catch (e) { /* silent */ }
     
     const showOwned = document.getElementById('show-owned');
     const showMissing = document.getElementById('show-missing');
@@ -1042,11 +1126,11 @@ function renderBinder() {
     const statsContainer = document.getElementById('rarity-stats');
     if (statsContainer) {
         const labels = {
-            common: { emoji: '⚪', name: 'Communes' },
-            uncommon: { emoji: '🟢', name: 'Peu Com.' },
-            rare: { emoji: '🔵', name: 'Rares' },
-            ultra_rare: { emoji: '🟣', name: 'Ultra Rares' },
-            secret: { emoji: '⭐', name: 'Secrètes' }
+            common: { emoji: '<span class="dot dot-common">⬤</span>', name: 'Communes' },
+            uncommon: { emoji: '<span class="dot dot-uncommon">⬤</span>', name: 'Peu Com.' },
+            rare: { emoji: '<span class="dot dot-rare">⬤</span>', name: 'Rares' },
+            ultra_rare: { emoji: '<span class="dot dot-ultra">⬤</span>', name: 'Ultra Rares' },
+            secret: { emoji: '<img src="assets/icons/star.svg" class="icon-inline" alt="secret">', name: 'Secrètes' }
         };
         
         // Calculer le total global
@@ -1059,10 +1143,14 @@ function renderBinder() {
         const globalPercent = totalCards > 0 ? Math.round((totalOwned / totalCards) * 100) : 0;
         
         // Badge global en premier
+        const targetFilterComplete = 'brightness(0) saturate(100%) invert(54%) sepia(64%) saturate(420%) hue-rotate(73deg) brightness(96%) contrast(88%)';
+        const targetFilterDefault = 'brightness(0) saturate(100%) invert(65%) sepia(4%) saturate(9%) hue-rotate(38deg) brightness(93%) contrast(92%)';
+        const targetFilter = (totalOwned === totalCards) ? targetFilterComplete : targetFilterDefault;
+
         let badgesHtml = `<div class="rarity-stat-badge ${totalOwned === totalCards ? 'complete' : 'incomplete'}" 
             onclick="toggleRarityFilter(null)" 
-            style="cursor: pointer; ${selectedRarityFilter === null ? 'box-shadow: 0 0 15px rgba(255, 222, 0, 0.8); transform: scale(1.05);' : ''}">
-            <span class="emoji">🎯</span>
+            style="cursor: pointer; ${selectedRarityFilter === null ? 'box-shadow: 0 0 15px rgba(255, 222, 0, 0.3); transform: scale(1.05);' : ''}">
+            <img src="assets/icons/target-arrow.svg" class="icon-inline" alt="target" style="filter: ${targetFilter};">
             <span>TOTAL: ${totalOwned}/${totalCards}</span>
             <span class="percent">(${globalPercent}%)</span>
         </div>`;
@@ -1075,11 +1163,21 @@ function renderBinder() {
                 const percent = Math.round((stats.owned / stats.total) * 100);
                 const isComplete = stats.owned === stats.total;
                 const isSelected = selectedRarityFilter === rarity;
+
+                // Pour la rareté secrète, appliquer le même comportement de filtre que pour le target-arrow
+                let emojiHtml = label.emoji;
+                if (rarity === 'secret') {
+                    const secretFilterComplete = targetFilterComplete;
+                    const secretFilterDefault = targetFilterDefault;
+                    const secretFilter = isComplete ? secretFilterComplete : secretFilterDefault;
+                    emojiHtml = `<img src="assets/icons/star.svg" class="icon-inline" alt="secret" style="filter: ${secretFilter};">`;
+                }
+
                 return `<div class="rarity-stat-badge ${isComplete ? 'complete' : 'incomplete'}" 
                     onclick="toggleRarityFilter('${rarity}')" 
-                    style="cursor: pointer; ${isSelected ? 'box-shadow: 0 0 15px rgba(255, 222, 0, 0.8); transform: scale(1.05);' : ''}" 
+                    style="cursor: pointer; ${isSelected ? 'box-shadow: 0 0 15px rgba(255, 222, 0, 0.3); transform: scale(1.05);' : ''}" 
                     title="Cliquez pour filtrer">
-                    <span class="emoji">${label.emoji}</span>
+                    <span class="emoji">${emojiHtml}</span>
                     <span>${label.name}: ${stats.owned}/${stats.total}</span>
                     <span class="percent">(${percent}%)</span>
                 </div>`;
@@ -1087,11 +1185,21 @@ function renderBinder() {
             .join('');
             
         statsContainer.innerHTML = badgesHtml;
+        // Afficher le panneau de stats une fois le contenu prêt
+        statsContainer.style.display = 'flex';
+        // If selected rarity filter is no longer valid for this generation, clear it
+        try {
+            const rarityKeys = Object.keys(rarityStats).filter(k => rarityStats[k].total > 0);
+            if (selectedRarityFilter && !rarityKeys.includes(selectedRarityFilter)) {
+                selectedRarityFilter = null;
+                pushUrlState();
+            }
+        } catch (e) { /* silent */ }
     }
     
     // Message si aucun résultat
-    if (filteredCards.length === 0) {
-        grid.innerHTML = '<div style="color: #999; text-align: center; width: 100%; padding: 40px; font-size: 1.2rem;">❌ Aucune carte ne correspond aux filtres</div>';
+        if (filteredCards.length === 0) {
+        grid.innerHTML = '<div style="color: #999; text-align: center; width: 100%; padding: 40px; font-size: 1.2rem;"> <img src="assets/icons/x.svg" class="icon-inline" alt="x"> Aucune carte ne correspond aux filtres</div>';
         return;
     }
 
@@ -1123,11 +1231,22 @@ function renderBinder() {
             grid.appendChild(el);
         }
     });
+    // Masquer l'écran de chargement après le premier rendu complet du classeur
+    try {
+        if (!window._binderHasLoaded) {
+            const loaderEl = document.getElementById('global-loader');
+            if (loaderEl) loaderEl.style.display = 'none';
+            window._binderHasLoaded = true;
+        }
+    } catch (e) {
+        console.warn('Impossible de masquer le loader après rendu du classeur', e);
+    }
 }
 
 // Fonction appelée par la barre de recherche
 window.filterBinder = () => {
     renderBinder();
+    pushUrlState();
 };
 
 // Fonction pour filtrer par rareté
@@ -1139,6 +1258,7 @@ window.toggleRarityFilter = (rarity) => {
         selectedRarityFilter = rarity;
     }
     renderBinder();
+    pushUrlState();
 };
 
 // Mode admin : afficher toutes les cartes
@@ -1146,6 +1266,7 @@ window.toggleAdminPreview = () => {
     const checkbox = document.getElementById('admin-show-all');
     adminShowAllMode = checkbox ? checkbox.checked : false;
     renderBinder();
+    try { pushUrlState(); } catch (e) { /* silent */ }
 };
 
 // Création du HTML d'une carte (Compatible Pokémon & Events)
@@ -1164,7 +1285,7 @@ function createCardElement(card, quantity = 1, cardNumber = null, totalCards = n
     const icon = GAME_CONFIG.icons[mainType] || GAME_CONFIG.icons['Normal'];
     const weakIcon = GAME_CONFIG.icons[card.weakness] || GAME_CONFIG.icons['Normal'];
     const resIcon = card.resistance ? GAME_CONFIG.icons[card.resistance] : null;
-    const retreatCircles = '⚪'.repeat(card.retreatCost || 0) || '-';
+    const retreatCircles = (card.retreatCost && card.retreatCost > 0) ? '<span class="dot dot-common">⬤</span>'.repeat(card.retreatCost) : '-';
 
     div.className = `tcg-card ${cssRarity} bg-${mainType}`;
 
@@ -1219,8 +1340,11 @@ function createCardElement(card, quantity = 1, cardNumber = null, totalCards = n
 window.drawCard = async (overridePackQuantity = null, options = {}) => {
     const user = auth.currentUser;
     if (!user) return;
-
     const isAdmin = (user.email === ADMIN_EMAIL);
+    // Récupérer le rôle/utilisateur (utile pour VIP)
+    const userSnapForDraw = await getDoc(doc(db, "players", user.uid));
+    const userRoleForDraw = userSnapForDraw && userSnapForDraw.exists() ? userSnapForDraw.data().role : null;
+    const isVip = userRoleForDraw === 'vip';
     const btn = document.getElementById('btn-draw');
     
     // Sécurité anti-clic
@@ -1272,8 +1396,9 @@ window.drawCard = async (overridePackQuantity = null, options = {}) => {
                 
                 // La 5ème carte (index 4) utilise des taux spéciaux
                 const rates = (i === 4) ? GAME_CONFIG.dropRatesSixthCard : GAME_CONFIG.dropRates;
-                
-                for (const r of rates) {
+                const effectiveRates = isVip ? adjustRatesForVip(rates) : rates;
+
+                for (const r of effectiveRates) {
                     acc += r.chance;
                     if (rand <= acc) { rarityConfig = r; break; }
                 }
@@ -1357,10 +1482,11 @@ window.drawCard = async (overridePackQuantity = null, options = {}) => {
             startingBonusPacks = Math.max(0, currentBonusPacks - packQuantity);
         }
 
-        // Calculer nouveaux points et bonus packs pour cette génération
+        // Calculer nouveaux points et bonus packs pour cette génération (seuil différent pour VIP)
+        const pointsForThisUser = isVip ? 20 : POINTS_FOR_BONUS_PACK;
         const totalPoints = currentPoints + pointsGained;
-        const earnedBonusPacks = Math.floor(totalPoints / POINTS_FOR_BONUS_PACK);
-        const remainingPoints = totalPoints % POINTS_FOR_BONUS_PACK;
+        const earnedBonusPacks = Math.floor(totalPoints / pointsForThisUser);
+        const remainingPoints = totalPoints % pointsForThisUser;
         
         // Mettre à jour les données de cette génération (conserve availablePacks et lastDrawTime)
         packsByGen[selectedGen] = {
@@ -1386,7 +1512,7 @@ window.drawCard = async (overridePackQuantity = null, options = {}) => {
         
         // Afficher un message si un booster bonus a été gagné
         if (earnedBonusPacks > 0) {
-            window.showPopup("🎁 Booster Bonus!", `Vous avez gagné ${earnedBonusPacks} booster(s) bonus avec vos points !`);
+            window.showPopup("<img src='assets/icons/gift.svg' class='icon-inline' alt='gift'> Booster Bonus!", `Vous avez gagné ${earnedBonusPacks} booster(s) bonus avec vos points !`);
         }
 
         // Gestion Timer
@@ -1399,7 +1525,8 @@ window.drawCard = async (overridePackQuantity = null, options = {}) => {
                 const availablePacks = genData.availablePacks ?? 0;
                 
                 if (availablePacks === 0) {
-                    startTimer(COOLDOWN_MINUTES * 60 * 1000, user.uid);
+                    const cooldownMins = isVip ? VIP_COOLDOWN_MINUTES : COOLDOWN_MINUTES;
+                    startTimer(cooldownMins * 60 * 1000, user.uid);
                 }
             }
         } else { 
@@ -1425,6 +1552,9 @@ function openBoosterVisual(alreadyRevealed = []) {
     showCloseButton(false);
     revealAllBtn.style.display = 'inline-block';
     overlay.style.display = 'flex';
+    // Mark booster as open in URL state
+    window._openBooster = true;
+    try { pushUrlState(); } catch (e) { /* silent */ }
     
     // Bloquer le scroll de la page en arrière-plan
     document.body.classList.add('booster-active');
@@ -1635,6 +1765,9 @@ window.closeBooster = async () => {
     
     // Réinitialiser les cartes temporaires
     tempBoosterCards = [];
+    // Clear URL booster flag
+    window._openBooster = false;
+    try { pushUrlState(); } catch (e) { /* silent */ }
     
     // Mettre à jour l'affichage des points immédiatement après la fermeture
     try { await updatePointsDisplay(); } catch (e) { /* silent */ }
@@ -1672,7 +1805,8 @@ async function checkCooldown(uid) {
         const lastDraw = genData.lastDrawTime || 0;
         
         const diff = Date.now() - lastDraw;
-        const cooldownMs = COOLDOWN_MINUTES * 60 * 1000;
+        const cooldownMinutesForUser = (data.role === 'vip') ? VIP_COOLDOWN_MINUTES : COOLDOWN_MINUTES;
+        const cooldownMs = cooldownMinutesForUser * 60 * 1000;
         
         // Si le cooldown est passé ET qu'il n'y a plus de packs, régénérer TOUS les packs
         const wasZero = availablePacks <= 0;
@@ -1742,7 +1876,7 @@ function startTimer(durationMs, uid = null) {
         }
         const m = Math.floor((remaining / 1000 / 60) % 60);
         const s = Math.floor((remaining / 1000) % 60);
-        btn.innerHTML = `<div class="booster-content">⏳ Prochain dans ${m}:${s < 10 ? '0'+s : s}</div>`;
+        btn.innerHTML = `<div class="booster-content"><img src="assets/icons/hourglass.svg" class="icon-inline" alt="hourglass"> Prochain dans ${m}:${s < 10 ? '0'+s : s}</div>`;
     };
     tick();
     cooldownInterval = setInterval(tick, 1000);
@@ -1941,7 +2075,7 @@ window.googleLogin = async () => {
             } catch(redirectError) {
                 Logger.error('Erreur lors de la redirection Google', redirectError);
                 authMsg.style.color = '#ff6b6b';
-                authMsg.innerText = '⚠️ Erreur de connexion: ' + redirectError.message;
+                authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Erreur de connexion: ' + redirectError.message;
             }
         } else {
             // Autre type d'erreur
@@ -1949,11 +2083,11 @@ window.googleLogin = async () => {
             authMsg.style.color = '#ff6b6b';
             
             if (e.code === 'auth/account-exists-with-different-credential') {
-                authMsg.innerText = '⚠️ Ce compte existe déjà avec une autre méthode';
+                authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Ce compte existe déjà avec une autre méthode';
             } else if (e.code === 'auth/network-request-failed') {
-                authMsg.innerText = '⚠️ Erreur réseau. Vérifiez votre connexion.';
+                authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Erreur réseau. Vérifiez votre connexion.';
             } else {
-                authMsg.innerText = '⚠️ Erreur: ' + e.message;
+                authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Erreur: ' + e.message;
             }
         }
     }
@@ -1964,12 +2098,12 @@ window.signUp = async () => {
     const authMsg = document.getElementById('auth-msg');
     
     if (!email || !password) {
-        authMsg.innerText = '⚠️ Veuillez remplir tous les champs';
+        authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Veuillez remplir tous les champs';
         return;
     }
     
     if (password.length < 6) {
-        authMsg.innerText = '⚠️ Le mot de passe doit contenir au moins 6 caractères';
+        authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Le mot de passe doit contenir au moins 6 caractères';
         return;
     }
     
@@ -1982,13 +2116,13 @@ window.signUp = async () => {
     } catch(e) {
         authMsg.style.color = '#ff6b6b';
         if (e.code === 'auth/email-already-in-use') {
-            authMsg.innerText = '⚠️ Cette adresse email est déjà utilisée';
+            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Cette adresse email est déjà utilisée';
         } else if (e.code === 'auth/invalid-email') {
-            authMsg.innerText = '⚠️ Adresse email invalide';
+            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Adresse email invalide';
         } else if (e.code === 'auth/weak-password') {
-            authMsg.innerText = '⚠️ Mot de passe trop faible';
+            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Mot de passe trop faible';
         } else {
-            authMsg.innerText = '⚠️ Erreur : ' + e.message;
+            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Erreur : ' + e.message;
         }
     }
 };
@@ -1999,7 +2133,7 @@ window.signIn = async () => {
     const authMsg = document.getElementById('auth-msg');
     
     if (!email || !password) {
-        authMsg.innerText = '⚠️ Veuillez remplir tous les champs';
+        authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Veuillez remplir tous les champs';
         return;
     }
     
@@ -2012,15 +2146,15 @@ window.signIn = async () => {
     } catch(e) {
         authMsg.style.color = '#ff6b6b';
         if (e.code === 'auth/user-not-found') {
-            authMsg.innerText = '⚠️ Aucun compte trouvé avec cet email';
+            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Aucun compte trouvé avec cet email';
         } else if (e.code === 'auth/wrong-password') {
-            authMsg.innerText = '⚠️ Mot de passe incorrect';
+            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Mot de passe incorrect';
         } else if (e.code === 'auth/invalid-email') {
-            authMsg.innerText = '⚠️ Adresse email invalide';
+            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Adresse email invalide';
         } else if (e.code === 'auth/invalid-credential') {
-            authMsg.innerText = '⚠️ Email ou mot de passe incorrect';
+            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Email ou mot de passe incorrect';
         } else {
-            authMsg.innerText = '⚠️ Erreur : ' + e.message;
+            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Erreur : ' + e.message;
         }
     }
 };
@@ -2033,11 +2167,11 @@ window.togglePasswordVisibility = (btn) => {
         if (!input) return;
         if (input.type === 'password') {
             input.type = 'text';
-            btn.innerText = '🙈';
+            btn.innerHTML = '<img src="assets/icons/eye-closed.svg" class="title-icon" alt="masquer" style="filter: brightness(0) saturate(100%) invert(49%) sepia(0%) saturate(0%) hue-rotate(89deg) brightness(93%) contrast(95%);">';
             btn.setAttribute('aria-label', 'Masquer le mot de passe');
         } else {
             input.type = 'password';
-            btn.innerText = '👁️';
+            btn.innerHTML = '<img src="assets/icons/eye.svg" class="title-icon" alt="afficher" style="filter: brightness(0) saturate(100%) invert(49%) sepia(0%) saturate(0%) hue-rotate(89deg) brightness(93%) contrast(95%);">';
             btn.setAttribute('aria-label', 'Afficher le mot de passe');
         }
     } catch (e) {
