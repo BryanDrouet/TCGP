@@ -812,6 +812,15 @@ async function fetchUserCollection(uid) {
             userCollection = snap.data().collection || [];
             const countEl = document.getElementById('card-count');
             if(countEl) countEl.innerText = userCollection.length;
+            // Apply role class to the profile pill for per-role icon filters
+            try {
+                const role = snap.data().role || 'player';
+                const userProfilePill = document.getElementById('user-profile-pill');
+                if (userProfilePill) {
+                    userProfilePill.classList.remove('role-player','role-admin','role-vip');
+                    userProfilePill.classList.add(`role-${role}`);
+                }
+            } catch(e) { /* noop */ }
             
             // Mettre à jour l'affichage des points
             updatePointsDisplay();
@@ -831,6 +840,14 @@ async function fetchUserCollection(uid) {
             userCollection = [];
             const countEl = document.getElementById('card-count');
             if(countEl) countEl.innerText = 0;
+            // ensure profile pill gets default role class
+            try {
+                const userProfilePill = document.getElementById('user-profile-pill');
+                if (userProfilePill) {
+                    userProfilePill.classList.remove('role-player','role-admin','role-vip');
+                    userProfilePill.classList.add('role-player');
+                }
+            } catch(e) { /* noop */ }
             updatePointsDisplay();
         }
     } catch (e) {

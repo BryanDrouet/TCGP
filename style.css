@@ -261,6 +261,8 @@ nav { background: var(--dark); border-bottom: 4px solid var(--secondary); paddin
 .h3-icon img.icon-inline {
     margin-right: 0;
     filter: brightness(0) saturate(100%) invert(76%) sepia(89%) saturate(554%) hue-rotate(357deg) brightness(100%) contrast(108%);
+    width: 22px;
+    height: 22px;
 }
 
 /* When a filter toggle is active, remove the default invert filter and apply a subtle glow */
@@ -947,6 +949,26 @@ img:not(.icon-inline):not(.title-icon):not(.card-img):not(.logo-img) { max-width
     text-shadow: 2px 2px 0 var(--primary);
     letter-spacing: 1px;
 }
+
+/* Make the admin title icon match the text 3D/outlined look */
+.admin-title .title-icon,
+.admin-title.title-icon {
+    width: 30px;
+    margin-right: 10px;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    /* recolor the icon to the same yellow as the text, then add layered drop-shadows
+       to emulate the blue offset "extrude" (same as text-shadow on the heading) */
+    filter: brightness(0) saturate(100%) invert(84%) sepia(61%) saturate(1600%) hue-rotate(355deg) brightness(1.02) contrast(1.02)
+            drop-shadow(1px 1px 0 var(--primary))
+            drop-shadow(1px 1px 0 var(--primary))
+            drop-shadow(3px 3px 6px rgba(0,0,0,0.25));
+    -webkit-filter: brightness(0) saturate(100%) invert(84%) sepia(61%) saturate(1600%) hue-rotate(355deg) brightness(1.02) contrast(1.02)
+            drop-shadow(1px 1px 0 var(--primary))
+            drop-shadow(1px 1px 0 var(--primary))
+            drop-shadow(3px 3px 6px rgba(0,0,0,0.25));
+}
 .table-container { 
     border-radius: 15px; 
     overflow: hidden; 
@@ -988,6 +1010,33 @@ td:nth-child(3) { white-space: nowrap; }
 td:nth-child(4) { white-space: nowrap; }
 td:nth-child(5) { padding: 8px; }
 td:nth-child(5) > div { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+
+/* Column helper wrappers for admin table */
+.col-role { display: flex; align-items: center; gap: 8px; }
+.col-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.col-actions .btn-action { margin-right: 6px; }
+
+/* Role-specific icon filters in admin table */
+.col-role.role-player .title-icon {
+    filter: brightness(0) saturate(100%) invert(99%) sepia(1%) saturate(40%) hue-rotate(192deg) brightness(117%) contrast(100%) !important;
+}
+.col-role.role-admin .title-icon {
+    filter: brightness(0) saturate(100%) invert(73%) sepia(84%) saturate(862%) hue-rotate(0deg) brightness(104%) contrast(103%) !important;
+}
+.col-role.role-vip .title-icon {
+    filter: brightness(0) saturate(100%) invert(76%) sepia(44%) saturate(2512%) hue-rotate(93deg) brightness(92%) contrast(101%) !important;
+}
+
+/* Profile pill role-specific icon filters on the main page */
+.user-pill.role-player .title-icon {
+    filter: brightness(0) saturate(100%) invert(99%) sepia(1%) saturate(40%) hue-rotate(192deg) brightness(117%) contrast(100%) !important;
+}
+.user-pill.role-admin .title-icon {
+    filter: brightness(0) saturate(100%) invert(73%) sepia(84%) saturate(862%) hue-rotate(0deg) brightness(104%) contrast(103%) !important;
+}
+.user-pill.role-vip .title-icon {
+    filter: brightness(0) saturate(100%) invert(76%) sepia(44%) saturate(2512%) hue-rotate(93deg) brightness(92%) contrast(101%) !important;
+}
 
 /* Boutons d'action admin */
 .btn-action { 
