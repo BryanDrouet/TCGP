@@ -1,13 +1,15 @@
 // Service Worker pour PWA
-const CACHE_NAME = 'poke-tcg-v5';
+const CACHE_NAME = 'poke-tcg-v6';
+// Déterminer le chemin de base depuis l'URL du SW (permet dev local et GitHub Pages)
+const BASE_PATH = self.location.pathname.replace(/[^/]*$/, '/');
 const urlsToCache = [
-  '/TCGP/',
-  '/TCGP/index.html',
-  '/TCGP/style.css',
-  '/TCGP/script.js',
-  '/TCGP/generator.js',
-  '/TCGP/favicon.ico',
-  '/TCGP/manifest.json'
+  `${BASE_PATH}`,
+  `${BASE_PATH}index.html`,
+  `${BASE_PATH}style.css`,
+  `${BASE_PATH}script.js`,
+  `${BASE_PATH}generator.js`,
+  `${BASE_PATH}favicon.ico`,
+  `${BASE_PATH}manifest.json`
 ];
 
 // Fonction de logging pour le Service Worker
@@ -112,7 +114,7 @@ self.addEventListener('fetch', event => {
           // Si c'est une requête de navigation et qu'il n'y a pas de cache, retourner index.html
           if (!cachedResponse && event.request.mode === 'navigate') {
             swLog('info', 'Redirection navigation vers index.html pour: ' + event.request.url);
-            return caches.match('/index.html');
+            return caches.match(`${BASE_PATH}index.html`);
           }
           if (!cachedResponse) {
             swLog('error', 'Aucun cache disponible pour: ' + event.request.url);

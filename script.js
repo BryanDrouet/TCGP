@@ -144,8 +144,12 @@ let deferredPrompt = null;
 let swRegistration = null;
 
 if ('serviceWorker' in navigator) {
+    const isGhPages = window.location.hostname.endsWith('github.io');
+    const swScope = isGhPages ? '/TCGP/' : '/';
+    const swPath = `${swScope}sw.js`;
+
     window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/TCGP/sw.js')
+        navigator.serviceWorker.register(swPath, { scope: swScope })
             .then(registration => {
                 swRegistration = registration;
                 Logger.info('Service Worker enregistré', { scope: registration.scope });
@@ -680,27 +684,6 @@ onAuthStateChanged(auth, async (user) => {
             window.showPopup("Erreur", errorMessage);
         }
 
-        // 1. Charger la collection
-        await fetchUserCollection(user.uid);
-        
-        // 2. Vérifier si un booster est en cours d'ouverture
-        const snap = await getDoc(doc(db, "players", user.uid));
-        if (snap.exists() && snap.data().currentBooster && snap.data().currentBooster.length > 0) {
-            // Restaurer l'ouverture en cours
-            tempBoosterCards = snap.data().currentBooster;
-            const revealedCards = snap.data().boosterRevealedCards || [];
-            openBoosterVisual(revealedCards);
-        }
-
-        // 3. Charger le classeur (Gen par défaut)
-        await changeGen(); 
-
-        // 4. Vérifier le Cooldown
-        if (!isAdmin) await checkCooldown(user.uid);
-        else enableBoosterButton(true);
-
-        // Fin du chargement
-        if(loader) loader.style.display = 'none';
     } else {
         Logger.info('Utilisateur non connecté');
         // Déconnecté
@@ -1810,6 +1793,7 @@ window.requestNotification = async () => {
 
 function updateBellIcon() {
     const bell = document.getElementById('notif-bell');
+    if (!bell) return; // Pas d'icône de cloche dans ce contexte
     if (Notification.permission === "granted") bell.classList.add('bell-active');
     else bell.classList.remove('bell-active');
 }
