@@ -1074,6 +1074,20 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     }
 });
 
+// --- UTILITAIRES SÉCURITÉ ---
+// Fonction pour échapper les caractères HTML dangereux (prévient XSS)
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, char => map[char]);
+}
+
 // --- RÉINITIALISATION DE MOT DE PASSE ---
 // Envoi d'un email de réinitialisation (sans serveur, via Supabase)
 window.resetPasswordEmail = async () => {
@@ -1104,7 +1118,7 @@ window.resetPasswordEmail = async () => {
     } catch (e) {
         if (authMsg) {
             authMsg.style.color = '#ff6b6b';
-            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> <strong>Erreur d\'envoi :</strong> ' + (e.message || 'Impossible d\'envoyer le lien. Réessayez.');
+            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> <strong>Erreur d\'envoi :</strong> ' + escapeHtml(e.message || 'Impossible d\'envoyer le lien. Réessayez.');
         }
     }
 };
@@ -1158,7 +1172,7 @@ window.submitNewPassword = async () => {
     } catch (e) {
         if (msgEl) {
             msgEl.style.color = '#ff6b6b';
-            msgEl.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Erreur: ' + (e.message || 'Mise à jour impossible');
+            msgEl.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Erreur: ' + escapeHtml(e.message || 'Mise à jour impossible');
         }
     }
 };
@@ -2570,10 +2584,10 @@ window.signIn = async () => {
         const status = e && (e.status || e.code);
         if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials') || status === 400) {
             authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> <strong>Échec de connexion :</strong> Email ou mot de passe incorrect. Vérifiez vos identifiants.';
-        } else if (e.message.includes('Email not confirmed')) {
+        } else if (msg.includes('Email not confirmed')) {
             authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Veuillez confirmer votre email';
         } else {
-            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Erreur : ' + e.message;
+            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Erreur : ' + escapeHtml(msg);
         }
     }
 };
