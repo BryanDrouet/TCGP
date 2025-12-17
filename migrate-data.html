@@ -307,7 +307,7 @@
         // Test de connexion Supabase
         (async () => {
             try {
-                const { error } = await supabase.from('players').select('count').limit(1);
+                const { error } = await supabase.from('players').select('*', { count: 'exact', head: true });
                 if (error) {
                     if (error.message.includes('JWT')) {
                         showStatus('⚠️ Configuration Supabase manquante. Vérifiez supabase-config.js', 'error');
