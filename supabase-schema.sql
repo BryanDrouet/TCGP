@@ -171,11 +171,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Grant necessary permissions
+-- Grant necessary permissions (minimal privileges for security)
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
-GRANT ALL ON players TO anon, authenticated;
-GRANT ALL ON sessions TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION get_or_create_player TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE ON players TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON sessions TO authenticated;
+GRANT EXECUTE ON FUNCTION get_or_create_player TO authenticated;
+
+-- Note: Anon users have very limited access through RLS policies
+-- Only authenticated users can modify data
 
 -- Success message
 DO $$

@@ -7,4 +7,12 @@ export const SUPABASE_CONFIG = {
     anonKey: 'YOUR_SUPABASE_ANON_KEY_HERE' // Get this from Supabase Dashboard > Settings > API
 };
 
-// Note: You need to replace YOUR_SUPABASE_ANON_KEY_HERE with your actual key
+// IMPORTANT SECURITY NOTE:
+// 1. Never commit your real anon key to version control
+// 2. Consider adding supabase-config.js to .gitignore after initial setup
+// 3. For production, use environment variables or a secure config management solution
+// 
+// To protect your API key:
+// - Add supabase-config.js to .gitignore: echo "supabase-config.js" >> .gitignore
+// - Create a template: cp supabase-config.js supabase-config.js.template
+// - Commit only the template with placeholder values

@@ -750,21 +750,22 @@ window.deleteAccount = async () => {
     if (!user) return;
     
     try {
-        // Supprimer les données Firestore
+        // Supprimer les données Supabase (players et sessions)
         await deletePlayerDoc(user.id);
         await deleteSessionDoc(user.id);
         
-        // Supprimer le compte Firebase Auth
-        await user.delete();
+        // Déconnecter l'utilisateur (Supabase ne permet pas de supprimer son propre compte via le client)
+        // L'admin devra supprimer le compte Auth depuis le dashboard
+        await supabase.auth.signOut();
         
         closePopup();
-        window.showPopup("<img src='assets/icons/check.svg' class='icon-inline' alt='ok'> Compte supprimé", "Votre compte a été supprimé avec succès.");
-        setTimeout(() => location.reload(), 2000);
+        window.showPopup("<img src='assets/icons/check.svg' class='icon-inline' alt='ok'> Données supprimées", "Vos données ont été supprimées. Pour supprimer complètement votre compte, contactez un administrateur.");
+        setTimeout(() => location.reload(), 3000);
     } catch (e) {
-        if (e.code === 'auth/requires-recent-login') {
+        if (e.message && e.message.includes('session')) {
             window.showPopup("Erreur", "Vous devez vous reconnecter récemment pour supprimer votre compte. Déconnectez-vous et reconnectez-vous, puis réessayez.");
         } else {
-            window.showPopup("Erreur", "Impossible de supprimer le compte: " + e.message);
+            window.showPopup("Erreur", "Impossible de supprimer les données: " + e.message);
         }
     }
 };
