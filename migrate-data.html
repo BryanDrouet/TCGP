@@ -305,7 +305,7 @@
         }
 
         // Test de connexion Supabase
-        (async () => {
+        async function testSupabaseConnection() {
             try {
                 const { error } = await supabase.from('players').select('*', { count: 'exact', head: true });
                 if (error) {
@@ -323,7 +323,8 @@
             } catch (e) {
                 showStatus('❌ Impossible de se connecter à Supabase. Vérifiez votre configuration.', 'error');
             }
-        })();
+        }
+        testSupabaseConnection();
     </script>
 </body>
 </html>
