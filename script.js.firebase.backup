@@ -1,5 +1,6 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import { SUPABASE_CONFIG } from './supabase-config.js';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getFirestore, doc, setDoc, updateDoc, arrayUnion, getDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- SYSTÈME DE LOGGING ---
 const Logger = {
@@ -68,7 +69,7 @@ async function _flushPendingRevealed(uid) {
     clearTimeout(_saveBoosterTimer);
     _saveBoosterTimer = null;
     try {
-        await safeSetPlayerDoc(uid, { booster_revealed_cards: toSave }, { merge: true });
+        await safeSetPlayerDoc(uid, { boosterRevealedCards: toSave }, { merge: true });
     } catch (e) {
         console.error('Erreur sauvegarde (batch) révélation:', e);
     }
@@ -161,10 +162,10 @@ async function _processPlayerWriteQueue() {
                         const deduped = Array.from(new Map(items.map(c => [c && c.id ? c.id : JSON.stringify(c), c])).values());
                         items = deduped;
                     } catch (er) { /* fallback: use original items */ }
-                    await arrayUnionUpdate(item.uid, 'collection', items);
+                    await setDoc(doc(db, 'players', item.uid), { collection: arrayUnion(...items) }, { merge: true });
                 }
             } else {
-                await setPlayerDoc(item.uid, item.data, item.options || { merge: true });
+                await setDoc(doc(db, 'players', item.uid), item.data, item.options || { merge: true });
             }
             // success -> remove this item
             queue.splice(i, 1);
@@ -210,12 +211,12 @@ async function safeSetPlayerDoc(uid, data, options = { merge: true }) {
             return;
         }
 
-        await setPlayerDoc(uid, data, options);
+        await setDoc(doc(db, 'players', uid), data, options);
         window._lastPlayerWriteAt[uid] = Date.now();
     } catch (e) {
         const isQuota = (e && e.code && e.code === 'resource-exhausted') || (e && typeof e.message === 'string' && e.message.toLowerCase().includes('quota'));
         if (isQuota) {
-            console.warn('Quota dépassé — mise en file d\'attente de l\'écriture', { uid, data });
+            console.warn('Quota Firestore dépassé — mise en file d\'attente de l\'écriture', { uid, data });
             _enqueuePlayerWrite(uid, data, options);
         } else {
             // rethrow for other handlers
@@ -382,137 +383,20 @@ const POINTS_FOR_BONUS_PACK = 30;
 const BOOSTER_DELAY_SECONDS = 3;
 const AUTH_LOADING_TIMEOUT_MS = 10000; // 10 secondes max pour l'authentification
 
-// SUPABASE CONFIG
-const supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+// TA CONFIG FIREBASE (Celle que tu m'as donnée)
+const firebaseConfig = {
+    apiKey: "AIzaSyBdtS508E3KBTZHfOTb7kl-XDc9vVn3oZI",
+    authDomain: "tcgp-27e34.firebaseapp.com",
+    projectId: "tcgp-27e34",
+    storageBucket: "tcgp-27e34.firebasestorage.app",
+    messagingSenderId: "7412987658",
+    appId: "1:7412987658:web:87f0a63b9b7c95548bacf3"
+};
 
-// Helper to get current user
-function getCurrentUser() {
-    return supabase.auth.getUser().then(({ data }) => data.user);
-}
-
-// Helper to get session
-function getSession() {
-    return supabase.auth.getSession().then(({ data }) => data.session);
-}
-
-// Supabase database helpers
-async function getPlayerDoc(uid) {
-    const { data, error } = await supabase
-        .from('players')
-        .select('*')
-        .eq('user_id', uid)
-        .single();
-    
-    if (error && error.code !== 'PGRST116') { // PGRST116 = not found
-        console.error('Error fetching player:', error);
-        throw error;
-    }
-    
-    return {
-        exists: () => !!data,
-        data: () => data || {}
-    };
-}
-
-async function setPlayerDoc(uid, updates, options = {}) {
-    const { data: existingData } = await supabase
-        .from('players')
-        .select('*')
-        .eq('user_id', uid)
-        .single();
-    
-    let result;
-    if (existingData) {
-        // Update existing record
-        if (options.merge) {
-            // Merge with existing data
-            const mergedData = { ...existingData, ...updates };
-            result = await supabase
-                .from('players')
-                .update(mergedData)
-                .eq('user_id', uid);
-        } else {
-            result = await supabase
-                .from('players')
-                .update(updates)
-                .eq('user_id', uid);
-        }
-    } else {
-        // Insert new record
-        result = await supabase
-            .from('players')
-            .insert({ ...updates, user_id: uid });
-    }
-    
-    if (result.error) {
-        console.error('Error setting player doc:', result.error);
-        throw result.error;
-    }
-    
-    return result;
-}
-
-async function updatePlayerDoc(uid, updates) {
-    const { error } = await supabase
-        .from('players')
-        .update(updates)
-        .eq('user_id', uid);
-    
-    if (error) {
-        console.error('Error updating player:', error);
-        throw error;
-    }
-}
-
-async function deletePlayerDoc(uid) {
-    const { error } = await supabase
-        .from('players')
-        .delete()
-        .eq('user_id', uid);
-    
-    if (error) {
-        console.error('Error deleting player:', error);
-        throw error;
-    }
-}
-
-async function getAllPlayers() {
-    const { data, error } = await supabase
-        .from('players')
-        .select('*')
-        .order('created_at', { ascending: false });
-    
-    if (error) {
-        console.error('Error fetching all players:', error);
-        throw error;
-    }
-    
-    return data || [];
-}
-
-// Helper to add items to array in JSONB column
-async function arrayUnionUpdate(uid, field, items) {
-    const { data: currentData } = await supabase
-        .from('players')
-        .select(field)
-        .eq('user_id', uid)
-        .single();
-    
-    if (!currentData) return;
-    
-    const currentArray = currentData[field] || [];
-    const newArray = [...currentArray, ...items];
-    
-    const { error } = await supabase
-        .from('players')
-        .update({ [field]: newArray })
-        .eq('user_id', uid);
-    
-    if (error) {
-        console.error(`Error updating ${field}:`, error);
-        throw error;
-    }
-}
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
 
 // Try to flush any queued player writes from previous sessions
 try {
@@ -521,27 +405,49 @@ try {
     console.warn('Impossible de lancer le flush de la queue au démarrage', e);
 }
 
+// Configurer le provider pour forcer la sélection de compte
+provider.setCustomParameters({
+    prompt: 'select_account'
+});
+
 // Sur iOS/iPad, utiliser la persistance locale pour éviter les problèmes avec ITP
 if (DeviceInfo.isIOS || DeviceInfo.isIPad) {
     Logger.info('iOS/iPad détecté - Configuration de la persistance auth');
+    // Note: Firebase 10.x gère automatiquement la persistance
+    // mais on peut forcer des paramètres si nécessaire
 }
 
-// Vérifier les résultats de redirection au chargement (Google OAuth)
-supabase.auth.getSession().then(async ({ data }) => {
-    if (data.session && data.session.provider_token) {
-        Logger.info('Connexion Google par redirection réussie');
-    }
-}).catch((error) => {
-    Logger.error('Erreur lors de la récupération de la session', {
-        message: error.message
+// Vérifier les résultats de redirection au chargement
+getRedirectResult(auth)
+    .then(async (result) => {
+        if (result) {
+            Logger.info('Connexion Google par redirection réussie', { email: result.user.email });
+            // L'utilisateur vient de se connecter via redirect
+            // onAuthStateChanged se chargera du reste
+        }
+    })
+    .catch((error) => {
+        Logger.error('Erreur lors de la connexion Google par redirection', {
+            code: error.code,
+            message: error.message
+        });
+        
+            const authMsg = document.getElementById('auth-msg');
+        if (authMsg) {
+            authMsg.style.color = '#ff6b6b';
+            if (error.code === 'auth/popup-blocked') {
+                    authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Popups bloquées. Réessayez.';
+            } else if (error.code === 'auth/popup-closed-by-user') {
+                    authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Connexion annulée';
+            } else if (error.code === 'auth/cancelled-popup-request') {
+                    authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Connexion annulée';
+            } else if (error.code === 'auth/account-exists-with-different-credential') {
+                    authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Ce compte existe déjà avec une autre méthode de connexion';
+            } else {
+                    authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Erreur de connexion: ' + error.message;
+            }
+        }
     });
-    
-    const authMsg = document.getElementById('auth-msg');
-    if (authMsg) {
-        authMsg.style.color = '#ff6b6b';
-        authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Erreur de connexion: ' + error.message;
-    }
-});
 
 // --- GESTION INSTANCE UNIQUE ---
 const SESSION_ID = Date.now() + '_' + Math.random().toString(36) + '_' + performance.now();
@@ -852,14 +758,13 @@ function startAuthTimeout() {
         clearTimeout(authLoadingTimeout);
     }
     
-    authLoadingTimeout = setTimeout(async () => {
+    authLoadingTimeout = setTimeout(() => {
         const loader = document.getElementById('global-loader');
         if (loader && loader.style.display !== 'none') {
             Logger.error('Timeout du chargement - forçage de l\'affichage');
             loader.style.display = 'none';
             // Si pas d'utilisateur après timeout, afficher l'écran de connexion
-            const { data } = await supabase.auth.getUser();
-            if (!data.user) {
+            if (!auth.currentUser) {
                 document.getElementById('auth-overlay').style.display = 'flex';
                 window.showPopup("Erreur de chargement", "Le chargement a pris trop de temps. Veuillez vous reconnecter.");
             }
@@ -871,7 +776,7 @@ function startAuthTimeout() {
 // Démarrer le timeout au chargement de la page
 startAuthTimeout();
 
-supabase.auth.onAuthStateChange(async (event, session) => {
+onAuthStateChanged(auth, async (user) => {
     const loader = document.getElementById('global-loader');
     let isAdmin = false;
     
@@ -881,14 +786,12 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         authLoadingTimeout = null;
     }
     
-    const user = session?.user;
-    
     if (user) {
-        Logger.info('Utilisateur connecté', { email: user.email, uid: user.id });
+        Logger.info('Utilisateur connecté', { email: user.email, uid: user.uid });
         
         try {
             // Vérifier l'instance unique
-            const canContinue = await startSessionMonitoring(user.id);
+            const canContinue = await startSessionMonitoring(user.uid);
             if (!canContinue) {
                 Logger.warn('Instance unique bloquée');
                 return;
@@ -944,25 +847,24 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 
             // 1. Charger la collection
             Logger.debug('Chargement collection utilisateur');
-            await fetchUserCollection(user.id);
+            await fetchUserCollection(user.uid);
             
             // 2. Vérifier si un booster est en cours d'ouverture
-            const snap = await getPlayerDoc(user.id);
-            const playerData = snap.data();
-            if (snap.exists() && playerData.current_booster && playerData.current_booster.length > 0) {
+            const snap = await getDoc(doc(db, "players", user.uid));
+            if (snap.exists() && snap.data().currentBooster && snap.data().currentBooster.length > 0) {
                 // Restaurer l'ouverture en cours
                 Logger.info('Restauration booster en cours');
-                tempBoosterCards = playerData.current_booster;
-                const revealedCards = playerData.booster_revealed_cards || [];
+                tempBoosterCards = snap.data().currentBooster;
+                const revealedCards = snap.data().boosterRevealedCards || [];
                 openBoosterVisual(revealedCards);
             }
             
             // Vérifier les notifications admin
-            if (snap.exists() && playerData.admin_notification) {
-                const notif = playerData.admin_notification;
+            if (snap.exists() && snap.data().adminNotification) {
+                const notif = snap.data().adminNotification;
                 window.showPopup("Notification Admin", notif.message);
                 // Supprimer la notification après affichage (utiliser safe write)
-                await safeSetPlayerDoc(user.id, { admin_notification: null }, { merge: true });
+                await safeSetPlayerDoc(user.uid, { adminNotification: null }, { merge: true });
             }
             
             // 3. Charger le classeur (Gen par défaut)
@@ -972,7 +874,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
             await changeGen(); 
 
             // 4. Vérifier le Cooldown
-            if (!isAdmin) await checkCooldown(user.id);
+            if (!isAdmin) await checkCooldown(user.uid);
             else enableBoosterButton(true);
 
             // Fin du chargement
@@ -1010,18 +912,17 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     }
 });
 
-// Récupérer la collection depuis Supabase
+// Récupérer la collection depuis Firebase
 async function fetchUserCollection(uid) {
     try {
-        const snap = await getPlayerDoc(uid);
-        const playerData = snap.data();
+        const snap = await getDoc(doc(db, "players", uid));
         if (snap.exists()) {
-            userCollection = playerData.collection || [];
+            userCollection = snap.data().collection || [];
             const countEl = document.getElementById('card-count');
             if(countEl) countEl.innerText = userCollection.length;
             // Apply role class to the profile pill for per-role icon filters
             try {
-                const role = playerData.role || 'player';
+                const role = snap.data().role || 'player';
                 const userProfilePill = document.getElementById('user-profile-pill');
                 if (userProfilePill) {
                     userProfilePill.classList.remove('role-player','role-admin','role-vip');
@@ -1032,18 +933,17 @@ async function fetchUserCollection(uid) {
             // Mettre à jour l'affichage des points
             updatePointsDisplay();
         } else {
-            // Le compte n'existe pas -> Recréer automatiquement
+            // Le compte n'existe pas en Firestore -> Recréer automatiquement
             console.log("Document joueur inexistant, création...");
-            const { data } = await supabase.auth.getUser();
             await safeSetPlayerDoc(uid, {
-                email: data.user.email,
+                email: auth.currentUser.email,
                 collection: [],
-                packs_by_gen: {},
-                last_draw_time: 0,
-                available_packs: PACKS_PER_COOLDOWN,
+                packsByGen: {},
+                lastDrawTime: 0,
+                availablePacks: PACKS_PER_COOLDOWN,
                 role: 'player',
                 points: 0,
-                bonus_packs: 0
+                bonusPacks: 0
             }, { merge: true });
             userCollection = [];
             const countEl = document.getElementById('card-count');
@@ -1061,7 +961,7 @@ async function fetchUserCollection(uid) {
     } catch (e) {
         console.error("Erreur chargement collection:", e);
         window.showPopup("Erreur", "Impossible de charger votre profil. Veuillez vous reconnecter.");
-        await supabase.auth.signOut();
+        await signOut(auth);
     }
 }
 
