@@ -3,5 +3,5 @@
 
 export const SUPABASE_CONFIG = {
     url: 'https://ilcgojhgforbqiyvlwvb.supabase.co',
-    anonKey: 'YOUR_SUPABASE_ANON_KEY_HERE'  // Get from: Dashboard > Settings > API
+    anonKey: 'YOUR_SUPABASE_ANON_KEY_HERE' // Get from: Dashboard > Settings > API
 };

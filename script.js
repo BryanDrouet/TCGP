@@ -385,16 +385,6 @@ const AUTH_LOADING_TIMEOUT_MS = 10000; // 10 secondes max pour l'authentificatio
 // SUPABASE CONFIG
 const supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
 
-// Helper to get current user
-function getCurrentUser() {
-    return supabase.auth.getUser().then(({ data }) => data.user);
-}
-
-// Helper to get session
-function getSession() {
-    return supabase.auth.getSession().then(({ data }) => data.session);
-}
-
 // Supabase error codes
 const SUPABASE_ERROR_NOT_FOUND = 'PGRST116'; // PostgreSQL REST error: row not found
 
@@ -418,33 +408,52 @@ async function getPlayerDoc(uid) {
 }
 
 async function setPlayerDoc(uid, updates, options = {}) {
-    const { data: existingData } = await supabase
-        .from('players')
-        .select('*')
-        .eq('user_id', uid)
-        .single();
-    
     let result;
-    if (existingData) {
-        // Update existing record
-        if (options.merge) {
-            // Merge with existing data
+    
+    if (options.merge) {
+        // Only fetch existing data if merge is needed
+        const { data: existingData } = await supabase
+            .from('players')
+            .select('*')
+            .eq('user_id', uid)
+            .single();
+        
+        if (existingData) {
+            // Update existing record with merged data
             const mergedData = { ...existingData, ...updates };
             result = await supabase
                 .from('players')
                 .update(mergedData)
                 .eq('user_id', uid);
         } else {
+            // Insert new record
             result = await supabase
                 .from('players')
-                .update(updates)
-                .eq('user_id', uid);
+                .insert({ ...updates, user_id: uid });
         }
     } else {
-        // Insert new record
+        // Try to update first without fetching
         result = await supabase
             .from('players')
-            .insert({ ...updates, user_id: uid });
+            .update(updates)
+            .eq('user_id', uid);
+        
+        // If no rows updated, try to insert
+        if (result.status === 200 && result.statusText === 'OK' && !result.error) {
+            // Check if update actually affected rows by trying to fetch
+            const { data: check } = await supabase
+                .from('players')
+                .select('id')
+                .eq('user_id', uid)
+                .single();
+            
+            if (!check) {
+                // No existing record, insert new one
+                result = await supabase
+                    .from('players')
+                    .insert({ ...updates, user_id: uid });
+            }
+        }
     }
     
     if (result.error) {

@@ -21,7 +21,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     const loader = document.getElementById('global-loader');
     const user = session?.user;
     if (user) {
-        const { data, error } = await supabase
+        const { data } = await supabase
             .from('players')
             .select('role')
             .eq('user_id', user.id)

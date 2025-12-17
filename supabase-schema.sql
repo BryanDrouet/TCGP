@@ -86,15 +86,38 @@ CREATE POLICY "Users can view their own player data"
     ON players FOR SELECT
     USING (auth.uid() = user_id);
 
--- Users can update their own data
+-- Users can update their own data (but cannot change role unless admin)
 CREATE POLICY "Users can update their own player data"
     ON players FOR UPDATE
-    USING (auth.uid() = user_id);
+    USING (auth.uid() = user_id)
+    WITH CHECK (
+        auth.uid() = user_id
+        AND (
+            -- Non-admins cannot change their role
+            role = (SELECT role FROM players WHERE user_id = auth.uid())
+            OR EXISTS (
+                SELECT 1 FROM players
+                WHERE user_id = auth.uid()
+                AND role = 'admin'
+            )
+        )
+    );
 
--- Users can insert their own data
+-- Users can insert their own data (only as 'player' role unless they are admin)
 CREATE POLICY "Users can insert their own player data"
     ON players FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK (
+        auth.uid() = user_id
+        AND (
+            -- Non-admins may only insert themselves as 'player'
+            role = 'player'
+            OR EXISTS (
+                SELECT 1 FROM players
+                WHERE user_id = auth.uid()
+                AND role = 'admin'
+            )
+        )
+    );
 
 -- Admins can view all data
 CREATE POLICY "Admins can view all player data"

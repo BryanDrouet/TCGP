@@ -293,7 +293,7 @@
                     ✅ ${imported} joueurs mis à jour<br>
                     ⏭️ ${skipped} joueurs ignorés (doivent se connecter)<br>
                     ${errors > 0 ? `❌ ${errors} erreurs<br>` : ''}
-                    📧 Les utilisateurs doivent se reconnecter pour activer leur compte
+                    📧 Les ${skipped} joueurs ignorés doivent se connecter pour créer leur compte Supabase Auth avant que leurs données puissent être importées
                 `;
 
             } catch (error) {
