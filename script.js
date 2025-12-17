@@ -919,15 +919,34 @@ startAuthTimeout();
 supabase.auth.onAuthStateChange(async (event, session) => {
     const loader = document.getElementById('global-loader');
     let isAdmin = false;
-    
+
     // Annuler le timeout si l'auth se résout
     if (authLoadingTimeout) {
         clearTimeout(authLoadingTimeout);
         authLoadingTimeout = null;
     }
     
-    const user = session?.user;
+    // Gestion du flux de réinitialisation de mot de passe (via lien email)
+    if (event === 'PASSWORD_RECOVERY') {
+        if (loader) loader.style.display = 'none';
+        // Afficher l'overlay d'auth et une popup pour définir un nouveau mot de passe
+        const authOverlay = document.getElementById('auth-overlay');
+        if (authOverlay) authOverlay.style.display = 'flex';
+        try { showPasswordResetDialog(); } catch(e) { /* noop */ }
+        // Ne pas continuer l'initialisation de l'app dans ce cas
+        return;
+    }
     
+    const user = session?.user;
+
+    // Éviter les ré-initialisations lourdes en boucle
+    if (user && window._appInitialized) {
+        // Session déjà initialisée: faire des mises à jour légères si besoin
+        updateBellIcon();
+        if (loader) loader.style.display = 'none';
+        return;
+    }
+
     if (user) {
         Logger.info('Utilisateur connecté', { email: user.email, uid: user.id });
         
@@ -1054,6 +1073,95 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         if(loader) loader.style.display = 'none';
     }
 });
+
+// --- RÉINITIALISATION DE MOT DE PASSE ---
+// Envoi d'un email de réinitialisation (sans serveur, via Supabase)
+window.resetPasswordEmail = async () => {
+    const emailInput = document.getElementById('email');
+    const authMsg = document.getElementById('auth-msg');
+    const email = emailInput ? emailInput.value.trim() : '';
+    if (!email) {
+        if (authMsg) {
+            authMsg.style.color = '#ff6b6b';
+            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> <strong>Email requis :</strong> Entrez votre adresse email pour recevoir le lien de réinitialisation';
+        }
+        return;
+    }
+    if (authMsg) {
+        authMsg.style.color = '#4CAF50';
+        authMsg.innerHTML = '<img src="assets/icons/mail.svg" class="icon-inline" alt="mail"> <strong>Envoi en cours...</strong> Veuillez patienter';
+    }
+    try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            // Utilise l'URL actuelle comme redirection (doit être autorisée dans Supabase > Auth > URL de redirection)
+            redirectTo: window.location.origin + window.location.pathname
+        });
+        if (error) throw error;
+        if (authMsg) {
+            authMsg.style.color = '#4CAF50';
+            authMsg.innerHTML = '<img src="assets/icons/check.svg" class="icon-inline" alt="ok"> <strong>Email envoyé !</strong> Vérifiez votre boîte mail et cliquez sur le lien pour réinitialiser votre mot de passe.';
+        }
+    } catch (e) {
+        if (authMsg) {
+            authMsg.style.color = '#ff6b6b';
+            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> <strong>Erreur d\'envoi :</strong> ' + (e.message || 'Impossible d\'envoyer le lien. Réessayez.');
+        }
+    }
+};
+
+// Affiche une popup pour saisir le nouveau mot de passe
+window.showPasswordResetDialog = () => {
+    const html = `
+        <div>
+            <label for="new-password" class="popup-label">Nouveau mot de passe</label>
+            <input type="password" id="new-password" minlength="6" placeholder="Nouveau mot de passe" style="width:100%;">
+            <label for="new-password-confirm" class="popup-label" style="margin-top:10px;">Confirmer le mot de passe</label>
+            <input type="password" id="new-password-confirm" minlength="6" placeholder="Confirmer" style="width:100%;">
+            <div style="display:flex; gap:10px; margin-top:12px; justify-content:flex-end;">
+                <button class="btn-primary" onclick="submitNewPassword()"><img src="assets/icons/check.svg" class="icon-inline" alt="ok"> Mettre à jour</button>
+                <button class="btn-tertiary" onclick="closePopup()">Annuler</button>
+            </div>
+            <p id="reset-msg" class="auth-msg" style="margin-top:8px;"></p>
+        </div>
+    `;
+    window.showPopup('<img src="assets/icons/key-round.svg" class="icon-inline" alt="key"> RÉINITIALISATION', html);
+};
+
+// Soumettre le nouveau mot de passe à Supabase
+window.submitNewPassword = async () => {
+    const msgEl = document.getElementById('reset-msg');
+    const pass1 = (document.getElementById('new-password') || {}).value || '';
+    const pass2 = (document.getElementById('new-password-confirm') || {}).value || '';
+    if (!pass1 || pass1.length < 6) {
+        if (msgEl) {
+            msgEl.style.color = '#ff6b6b';
+            msgEl.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Mot de passe trop court (min. 6 caractères)';
+        }
+        return;
+    }
+    if (pass1 !== pass2) {
+        if (msgEl) {
+            msgEl.style.color = '#ff6b6b';
+            msgEl.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Les mots de passe ne correspondent pas';
+        }
+        return;
+    }
+    if (msgEl) {
+        msgEl.style.color = '#4CAF50';
+        msgEl.innerText = 'Mise à jour...';
+    }
+    try {
+        const { error } = await supabase.auth.updateUser({ password: pass1 });
+        if (error) throw error;
+        // Fermer immédiatement après succès
+        closePopup();
+    } catch (e) {
+        if (msgEl) {
+            msgEl.style.color = '#ff6b6b';
+            msgEl.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Erreur: ' + (e.message || 'Mise à jour impossible');
+        }
+    }
+};
 
 // Récupérer la collection depuis Supabase
 async function fetchUserCollection(uid) {
@@ -2458,8 +2566,10 @@ window.signIn = async () => {
         authMsg.innerText = '';
     } catch(e) {
         authMsg.style.color = '#ff6b6b';
-        if (e.message.includes('Invalid login credentials')) {
-            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Email ou mot de passe incorrect';
+        const msg = (e && e.message) ? e.message : '';
+        const status = e && (e.status || e.code);
+        if (msg.includes('Invalid login credentials') || msg.includes('invalid_credentials') || status === 400) {
+            authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> <strong>Échec de connexion :</strong> Email ou mot de passe incorrect. Vérifiez vos identifiants.';
         } else if (e.message.includes('Email not confirmed')) {
             authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Veuillez confirmer votre email';
         } else {

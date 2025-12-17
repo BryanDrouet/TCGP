@@ -36,6 +36,8 @@ self.addEventListener('install', event => {
         swLog('error', 'Erreur lors de la mise en cache', error);
       })
   );
+  // Forcer l'activation du nouveau SW dès l'installation
+  self.skipWaiting();
 });
 
 // Activation et nettoyage des anciens caches
@@ -52,16 +54,28 @@ self.addEventListener('activate', event => {
         })
       );
     })
+    .then(() => {
+      // Prendre le contrôle immédiatement des pages ouvertes
+      return self.clients.claim();
+    })
   );
 });
 
 // Stratégie de cache: Network First, puis Cache
 self.addEventListener('fetch', event => {
-  // Ignorer les requêtes POST et autres méthodes non-GET
-  if (event.request.method !== 'GET') {
+  // Ignorer les requêtes non-GET
+  if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+
+  // Ignorer tout ce qui est cross-origin (fonts, CDN, wikimedia, etc.)
+  if (url.origin !== self.location.origin) {
     return;
   }
-  
+
+  // Ne pas mettre en cache les assets avec un cache-busting type "?v=..."
+  const hasCacheBuster = url.searchParams.has('v');
+
   // Ignorer les requêtes Firebase et Google Auth
   if (event.request.url.includes('firebasestorage') || 
       event.request.url.includes('firebaseapp') ||
@@ -78,22 +92,22 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        // Ne cacher que les réponses réussies
+        // Ne cacher que les réponses réussies et de type basic
         if (!response || response.status !== 200 || response.type !== 'basic') {
           if (response && response.status === 404) {
             swLog('warn', 'Ressource 404: ' + event.request.url);
           }
           return response;
         }
-        
-        // Cloner la réponse
-        const responseToCache = response.clone();
-        
-        caches.open(CACHE_NAME)
-          .then(cache => {
+
+        // Sauter la mise en cache si cache-buster présent
+        if (!hasCacheBuster) {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
             cache.put(event.request, responseToCache);
           });
-        
+        }
+
         return response;
       })
       .catch(error => {

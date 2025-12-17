@@ -90,67 +90,51 @@ CREATE POLICY "Users can view their own player data"
 CREATE POLICY "Users can update their own player data"
     ON players FOR UPDATE
     USING (auth.uid() = user_id)
-    WITH CHECK (
-        auth.uid() = user_id
-        AND (
-            -- Non-admins cannot change their role
-            role = (SELECT role FROM players WHERE user_id = auth.uid())
-            OR EXISTS (
-                SELECT 1 FROM players
-                WHERE user_id = auth.uid()
-                AND role = 'admin'
-            )
-        )
-    );
+    WITH CHECK (auth.uid() = user_id);
 
 -- Users can insert their own data (only as 'player' role unless they are admin)
 CREATE POLICY "Users can insert their own player data"
     ON players FOR INSERT
-    WITH CHECK (
-        auth.uid() = user_id
-        AND (
-            -- Non-admins may only insert themselves as 'player'
-            role = 'player'
-            OR EXISTS (
-                SELECT 1 FROM players
-                WHERE user_id = auth.uid()
-                AND role = 'admin'
-            )
-        )
-    );
+    WITH CHECK (auth.uid() = user_id AND role = 'player');
 
 -- Admins can view all data
 CREATE POLICY "Admins can view all player data"
     ON players FOR SELECT
-    USING (
-        EXISTS (
-            SELECT 1 FROM players 
-            WHERE user_id = auth.uid() 
-            AND role = 'admin'
-        )
-    );
+    USING ((auth.jwt() ->> 'email') = 'bryan.drouet24@gmail.com');
 
 -- Admins can update all data
 CREATE POLICY "Admins can update all player data"
     ON players FOR UPDATE
-    USING (
-        EXISTS (
-            SELECT 1 FROM players 
-            WHERE user_id = auth.uid() 
-            AND role = 'admin'
-        )
-    );
+    USING ((auth.jwt() ->> 'email') = 'bryan.drouet24@gmail.com');
 
 -- Admins can delete player data
 CREATE POLICY "Admins can delete player data"
     ON players FOR DELETE
-    USING (
-        EXISTS (
-            SELECT 1 FROM players 
-            WHERE user_id = auth.uid() 
-            AND role = 'admin'
-        )
-    );
+    USING ((auth.jwt() ->> 'email') = 'bryan.drouet24@gmail.com');
+
+-- Prevent role changes unless admin via trigger (non-recursive)
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS boolean AS $$
+BEGIN
+    RETURN (auth.jwt() ->> 'email') = 'bryan.drouet24@gmail.com';
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+CREATE OR REPLACE FUNCTION prevent_role_change_unless_admin()
+RETURNS trigger AS $$
+BEGIN
+    IF (NEW.role <> OLD.role) AND NOT is_admin() THEN
+        RAISE EXCEPTION 'Seul un admin peut modifier le rôle';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS prevent_role_change_unless_admin ON players;
+CREATE TRIGGER prevent_role_change_unless_admin
+    BEFORE UPDATE ON players
+    FOR EACH ROW
+    EXECUTE FUNCTION prevent_role_change_unless_admin();
 
 -- RLS Policies for sessions table
 CREATE POLICY "Users can view their own session"

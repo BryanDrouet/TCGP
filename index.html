@@ -35,13 +35,13 @@
     <!-- Icons -->
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="apple-touch-icon" href="favicon.ico">
-    
-    <script>document.write('<link rel="stylesheet" href="style.css?v=' + Date.now() + '">');</script>
+
+    <!-- Remplace l'injection dynamique par un lien statique pour éviter les reloads permanents -->
+    <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-</head>
 </head>
 <body>
 
@@ -76,6 +76,9 @@
                 <div class="btn-group">
                         <button type="submit" class="btn-secondary">Connexion</button>
                         <button type="button" onclick="signUp()" class="btn-primary">Créer</button>
+                </div>
+                <div style="margin-top:10px; text-align:center;">
+                    <button type="button" onclick="resetPasswordEmail()" class="btn-tertiary" style="padding:8px 16px; font-size:0.9rem;">Mot de passe oublié ?</button>
                 </div>
             </form>
             <p id="auth-msg"></p>
