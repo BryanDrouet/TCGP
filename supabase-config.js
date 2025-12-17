@@ -3,8 +3,8 @@
 // https://supabase.com/dashboard/project/ilcgojhgforbqiyvlwvb/settings/api
 
 export const SUPABASE_CONFIG = {
-    url: 'https://ilcgojhgforbqiyvlwvb.supabase.co',
-    anonKey: 'YOUR_SUPABASE_ANON_KEY_HERE' // Get this from Supabase Dashboard > Settings > API
+    url: 'https://egmacofctncimeovofel.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVnbWFjb2ZjdG5jaW1lb3ZvZmVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5NTUyNTksImV4cCI6MjA4MTUzMTI1OX0.YxUb3wLDs_1p5kkjU8V_Zk_FaktMKBIWBRdcsdC0Gb0 ' // Get this from Supabase Dashboard > Settings > API
 };
 
 // IMPORTANT SECURITY NOTE:
