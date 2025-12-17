@@ -47,7 +47,7 @@ RETURNS boolean AS $$
 BEGIN
     RETURN (auth.jwt() ->> 'email') = 'bryan.drouet24@gmail.com';
 END;
-$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+$$ LANGUAGE plpgsql STABLE;
 
 -- Step 5: Create trigger to prevent role changes by non-admins
 DROP TRIGGER IF EXISTS prevent_role_change_unless_admin ON players;

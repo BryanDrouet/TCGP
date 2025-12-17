@@ -932,7 +932,12 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         // Afficher l'overlay d'auth et une popup pour définir un nouveau mot de passe
         const authOverlay = document.getElementById('auth-overlay');
         if (authOverlay) authOverlay.style.display = 'flex';
-        try { showPasswordResetDialog(); } catch(e) { /* noop */ }
+        try { 
+            showPasswordResetDialog(); 
+        } catch(e) { 
+            Logger.error('Erreur lors de l\'affichage du formulaire de réinitialisation', e);
+            window.showPopup('Erreur', 'Une erreur est survenue lors de l\'ouverture du formulaire de réinitialisation. Veuillez réessayer.');
+        }
         // Ne pas continuer l'initialisation de l'app dans ce cas
         return;
     }
@@ -949,6 +954,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 
     if (user) {
         Logger.info('Utilisateur connecté', { email: user.email, uid: user.id });
+        window._appInitialized = true;
         
         try {
             // Vérifier l'instance unique
@@ -1128,14 +1134,14 @@ window.showPasswordResetDialog = () => {
     const html = `
         <div>
             <label for="new-password" class="popup-label">Nouveau mot de passe</label>
-            <input type="password" id="new-password" minlength="6" placeholder="Nouveau mot de passe" style="width:100%;">
-            <label for="new-password-confirm" class="popup-label" style="margin-top:10px;">Confirmer le mot de passe</label>
-            <input type="password" id="new-password-confirm" minlength="6" placeholder="Confirmer" style="width:100%;">
-            <div style="display:flex; gap:10px; margin-top:12px; justify-content:flex-end;">
+            <input type="password" id="new-password" minlength="6" placeholder="Nouveau mot de passe" class="reset-input">
+            <label for="new-password-confirm" class="popup-label reset-label">Confirmer le mot de passe</label>
+            <input type="password" id="new-password-confirm" minlength="6" placeholder="Confirmer" class="reset-input">
+            <div class="reset-actions">
                 <button class="btn-primary" onclick="submitNewPassword()"><img src="assets/icons/check.svg" class="icon-inline" alt="ok"> Mettre à jour</button>
                 <button class="btn-tertiary" onclick="closePopup()">Annuler</button>
             </div>
-            <p id="reset-msg" class="auth-msg" style="margin-top:8px;"></p>
+            <p id="reset-msg" class="auth-msg reset-msg"></p>
         </div>
     `;
     window.showPopup('<img src="assets/icons/key-round.svg" class="icon-inline" alt="key"> RÉINITIALISATION', html);
@@ -1167,8 +1173,12 @@ window.submitNewPassword = async () => {
     try {
         const { error } = await supabase.auth.updateUser({ password: pass1 });
         if (error) throw error;
-        // Fermer immédiatement après succès
-        closePopup();
+        if (msgEl) {
+            msgEl.style.color = '#4CAF50';
+            msgEl.innerHTML = '<img src="assets/icons/check.svg" class="icon-inline" alt="ok"> <strong>Succès !</strong> Votre mot de passe a été mis à jour.';
+        }
+        // Fermer après brève pause pour montrer le message
+        setTimeout(() => { try { closePopup(); } catch(e){} }, 800);
     } catch (e) {
         if (msgEl) {
             msgEl.style.color = '#ff6b6b';

@@ -212,6 +212,37 @@ button {
     box-shadow: 0 2px 0 #a82929;
 }
 
+/* Styles pour réinitialisation mot de passe */
+.reset-button-container {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.btn-reset-password {
+    padding: 8px 16px !important;
+    font-size: 0.9rem !important;
+}
+
+.reset-input {
+    width: 100%;
+}
+
+.reset-label {
+    margin-top: 10px;
+    display: block;
+}
+
+.reset-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    justify-content: flex-end;
+}
+
+.reset-msg {
+    margin-top: 8px;
+}
+
 .btn-install-pwa { 
     background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); 
     color: white; 
