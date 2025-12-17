@@ -195,18 +195,52 @@ button {
 .btn-logout { 
     background: var(--danger); 
     color: white; 
-    padding: 5px 15px; 
-    font-size: 0.8rem; 
-    border-radius: 5px;
-    box-shadow: 0 2px 0 #a82929;
+    padding: 10px 20px; 
+    font-size: 0.95rem; 
+    border-radius: 8px;
+    box-shadow: 0 4px 0 #a82929;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
 }
 .btn-logout:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 3px 0 #a82929;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #a82929;
 }
 .btn-logout:active {
-    transform: translateY(1px);
-    box-shadow: 0 1px 0 #a82929;
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #a82929;
+}
+
+/* Styles pour réinitialisation mot de passe */
+.reset-button-container {
+    margin-top: 10px;
+    text-align: center;
+}
+
+.btn-reset-password {
+    padding: 8px 16px !important;
+    font-size: 0.9rem !important;
+}
+
+.reset-input {
+    width: 100%;
+}
+
+.reset-label {
+    margin-top: 10px;
+    display: block;
+}
+
+.reset-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    justify-content: flex-end;
+}
+
+.reset-msg {
+    margin-top: 8px;
 }
 
 .btn-install-pwa { 
@@ -228,10 +262,21 @@ button {
 }
 
 /* Message d'authentification */
-#auth-msg { color: #ff6b6b; font-size: 0.9em; margin-top: 15px; min-height: 20px; }
-
-/* Hide inline auth message if present (no longer used) */
-#auth-msg { display: none !important; }
+#auth-msg { 
+    color: #ff6b6b; 
+    font-size: 0.95em; 
+    margin-top: 15px; 
+    min-height: 20px;
+    padding: 10px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.3);
+    display: block;
+    text-align: center;
+    font-weight: 500;
+}
+#auth-msg:empty {
+    display: none;
+}
 
 /* --- NAV --- */
 nav { background: var(--dark); border-bottom: 4px solid var(--secondary); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
