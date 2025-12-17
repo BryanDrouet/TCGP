@@ -2375,8 +2375,6 @@ window.googleLogin = async () => {
         Logger.error('Erreur de connexion Google', { message: e.message });
         authMsg.style.color = '#ff6b6b';
         authMsg.innerHTML = '<img src="assets/icons/triangle-alert.svg" class="icon-inline" alt="warn"> Erreur: ' + e.message;
-            }
-        }
     }
 };
 window.signUp = async () => {
