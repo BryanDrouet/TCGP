@@ -14,18 +14,18 @@ DROP POLICY IF EXISTS "Admins can delete player data" ON players;
 -- Users can view their own data (no recursion)
 CREATE POLICY "Users can view their own player data"
     ON players FOR SELECT
-    USING (auth.uid() = user_id);
+    USING (auth._id() = _id);
 
 -- Users can update their own data (no recursion, role protection via trigger)
 CREATE POLICY "Users can update their own player data"
     ON players FOR UPDATE
-    USING (auth.uid() = user_id)
-    WITH CHECK (auth.uid() = user_id);
+    USING (auth._id() = _id)
+    WITH CHECK (auth._id() = _id);
 
 -- Users can insert their own data (only as 'player' role, no recursion)
 CREATE POLICY "Users can insert their own player data"
     ON players FOR INSERT
-    WITH CHECK (auth.uid() = user_id AND role = 'player');
+    WITH CHECK (auth._id() = _id AND role = 'player');
 
 -- Step 3: Create admin policies using email from JWT (no recursion)
 -- Admin email check - replace with your admin email if different

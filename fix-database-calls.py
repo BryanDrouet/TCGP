@@ -4,7 +4,7 @@ import re
 with open('script.js', 'r', encoding='utf-8') as f:
     content = f.read()
 
-# Replace getDoc(doc(db, "players", uid)) with getPlayerDoc(uid)
+# Replace getDoc(doc(db, "players", _id)) with getPlayerDoc(_id)
 content = re.sub(r'await getDoc\(doc\(db, "players", ([^)]+)\)\)', r'await getPlayerDoc(\1)', content)
 content = re.sub(r'getDoc\(doc\(db, "players", ([^)]+)\)\)', r'getPlayerDoc(\1)', content)
 

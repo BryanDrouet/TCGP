@@ -61,26 +61,26 @@ let _pendingRevealed = null; // array of indices to save (shared for current ope
 let _saveBoosterTimer = null;
 const BOOSTER_SAVE_DEBOUNCE_MS = 5000; // flush after 5s of inactivity
 
-async function _flushPendingRevealed(uid) {
-    if (!uid || !_pendingRevealed || _pendingRevealed.length === 0) return;
+async function _flushPendingRevealed(_id) {
+    if (!_id || !_pendingRevealed || _pendingRevealed.length === 0) return;
     const toSave = Array.from(new Set(_pendingRevealed)).sort((a,b)=>a-b);
     _pendingRevealed = null;
     clearTimeout(_saveBoosterTimer);
     _saveBoosterTimer = null;
     try {
-        await safeSetPlayerDoc(uid, { booster_revealed_cards: toSave }, { merge: true });
+        await safeSetPlayerDoc(_id, { booster_revealed_cards: toSave }, { merge: true });
     } catch (e) {
         console.error('Erreur sauvegarde (batch) révélation:', e);
     }
 }
 
-function _scheduleSaveRevealed(uid) {
-    if (!uid) return;
+function _scheduleSaveRevealed(_id) {
+    if (!_id) return;
     if (!_saveBoosterTimer) {
-        _saveBoosterTimer = setTimeout(() => _flushPendingRevealed(uid), BOOSTER_SAVE_DEBOUNCE_MS);
+        _saveBoosterTimer = setTimeout(() => _flushPendingRevealed(_id), BOOSTER_SAVE_DEBOUNCE_MS);
     } else {
         clearTimeout(_saveBoosterTimer);
-        _saveBoosterTimer = setTimeout(() => _flushPendingRevealed(uid), BOOSTER_SAVE_DEBOUNCE_MS);
+        _saveBoosterTimer = setTimeout(() => _flushPendingRevealed(_id), BOOSTER_SAVE_DEBOUNCE_MS);
     }
 }
 
@@ -107,22 +107,22 @@ function _writePlayerWriteQueue(queue) {
     }
 }
 
-function _enqueuePlayerWrite(uid, data, options = {}) {
+function _enqueuePlayerWrite(_id, data, options = {}) {
     const queue = _readPlayerWriteQueue();
-    queue.push({ uid, data, options, attempts: 0, createdAt: Date.now() });
+    queue.push({ _id, data, options, attempts: 0, createdAt: Date.now() });
     _writePlayerWriteQueue(queue);
     _schedulePlayerQueueFlush();
 }
 
 // Enqueue a collection-add operation that can be merged client-side to avoid
 // creating many separate writes for the same user. Items should be plain JS objects.
-function _enqueueCollectionAdd(uid, items = []) {
+function _enqueueCollectionAdd(_id, items = []) {
     if (!Array.isArray(items) || items.length === 0) return;
     const queue = _readPlayerWriteQueue();
-    // Try to find existing addToCollection for same uid and merge
+    // Try to find existing addToCollection for same _id and merge
     let found = false;
     for (let entry of queue) {
-        if (entry && entry.uid === uid && entry.op === 'addToCollection') {
+        if (entry && entry._id === _id && entry.op === 'addToCollection') {
             entry.items = (entry.items || []).concat(items);
             entry.createdAt = Math.min(entry.createdAt || Date.now(), Date.now());
             found = true;
@@ -130,7 +130,7 @@ function _enqueueCollectionAdd(uid, items = []) {
         }
     }
     if (!found) {
-        queue.push({ uid, op: 'addToCollection', items: items.slice(), attempts: 0, createdAt: Date.now() });
+        queue.push({ _id, op: 'addToCollection', items: items.slice(), attempts: 0, createdAt: Date.now() });
     }
     _writePlayerWriteQueue(queue);
     _schedulePlayerQueueFlush();
@@ -161,10 +161,10 @@ async function _processPlayerWriteQueue() {
                         const deduped = Array.from(new Map(items.map(c => [c && c.id ? c.id : JSON.stringify(c), c])).values());
                         items = deduped;
                     } catch (er) { /* fallback: use original items */ }
-                    await arrayUnionUpdate(item.uid, 'collection', items);
+                    await arrayUnionUpdate(item._id, 'collection', items);
                 }
             } else {
-                await setPlayerDoc(item.uid, item.data, item.options || { merge: true });
+                await setPlayerDoc(item._id, item.data, item.options || { merge: true });
             }
             // success -> remove this item
             queue.splice(i, 1);
@@ -197,26 +197,26 @@ async function _processPlayerWriteQueue() {
     if (changed) _writePlayerWriteQueue(queue);
 }
 
-async function safeSetPlayerDoc(uid, data, options = { merge: true }) {
+async function safeSetPlayerDoc(_id, data, options = { merge: true }) {
     try {
         // Simple per-user rate limiter to avoid immediate write bursts from UI
         if (!window._lastPlayerWriteAt) window._lastPlayerWriteAt = {};
         const MIN_WRITE_INTERVAL_MS = 1000; // 1s per-user minimum
-        const last = window._lastPlayerWriteAt[uid] || 0;
+        const last = window._lastPlayerWriteAt[_id] || 0;
         const now = Date.now();
         if (now - last < MIN_WRITE_INTERVAL_MS) {
             // enqueue instead of immediate write to avoid bursts
-            _enqueuePlayerWrite(uid, data, options);
+            _enqueuePlayerWrite(_id, data, options);
             return;
         }
 
-        await setPlayerDoc(uid, data, options);
-        window._lastPlayerWriteAt[uid] = Date.now();
+        await setPlayerDoc(_id, data, options);
+        window._lastPlayerWriteAt[_id] = Date.now();
     } catch (e) {
         const isQuota = (e && e.code && e.code === 'resource-exhausted') || (e && typeof e.message === 'string' && e.message.toLowerCase().includes('quota'));
         if (isQuota) {
-            console.warn('Quota dépassé — mise en file d\'attente de l\'écriture', { uid, data });
-            _enqueuePlayerWrite(uid, data, options);
+            console.warn('Quota dépassé — mise en file d\'attente de l\'écriture', { _id, data });
+            _enqueuePlayerWrite(_id, data, options);
         } else {
             // rethrow for other handlers
             throw e;
@@ -389,15 +389,15 @@ const supabase = createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
 const SUPABASE_ERROR_NOT_FOUND = 'PGRST116'; // PostgreSQL REST error: row not found
 
 // Supabase database helpers
-async function getPlayerDoc(uid) {
+async function getPlayerDoc(_id) {
     const { data, error } = await supabase
         .from('players')
         .select('*')
-        .eq('user_id', uid)
+        .eq('_id', _id)
         .single();
     
     if (error && error.code !== SUPABASE_ERROR_NOT_FOUND) {
-        console.error('Error fetching player for uid:', uid, error);
+        console.error('Error fetching player for _id:', _id, error);
         throw error;
     }
     
@@ -407,7 +407,7 @@ async function getPlayerDoc(uid) {
     };
 }
 
-async function setPlayerDoc(uid, updates, options = {}) {
+async function setPlayerDoc(_id, updates, options = {}) {
     let result;
     
     if (options.merge) {
@@ -415,7 +415,7 @@ async function setPlayerDoc(uid, updates, options = {}) {
         const { data: existingData } = await supabase
             .from('players')
             .select('*')
-            .eq('user_id', uid)
+            .eq('_id', _id)
             .single();
         
         if (existingData) {
@@ -424,19 +424,19 @@ async function setPlayerDoc(uid, updates, options = {}) {
             result = await supabase
                 .from('players')
                 .update(mergedData)
-                .eq('user_id', uid);
+                .eq('_id', _id);
         } else {
             // Insert new record
             result = await supabase
                 .from('players')
-                .insert({ ...updates, user_id: uid });
+                .insert({ ...updates, _id: _id });
         }
     } else {
         // Try to update first without fetching
         result = await supabase
             .from('players')
             .update(updates)
-            .eq('user_id', uid);
+            .eq('_id', _id);
         
         // If no rows updated, try to insert
         if (result.status === 200 && result.statusText === 'OK' && !result.error) {
@@ -444,14 +444,14 @@ async function setPlayerDoc(uid, updates, options = {}) {
             const { data: check } = await supabase
                 .from('players')
                 .select('id')
-                .eq('user_id', uid)
+                .eq('_id', _id)
                 .single();
             
             if (!check) {
                 // No existing record, insert new one
                 result = await supabase
                     .from('players')
-                    .insert({ ...updates, user_id: uid });
+                    .insert({ ...updates, _id: _id });
             }
         }
     }
@@ -464,11 +464,11 @@ async function setPlayerDoc(uid, updates, options = {}) {
     return result;
 }
 
-async function updatePlayerDoc(uid, updates) {
+async function updatePlayerDoc(_id, updates) {
     const { error } = await supabase
         .from('players')
         .update(updates)
-        .eq('user_id', uid);
+        .eq('_id', _id);
     
     if (error) {
         console.error('Error updating player:', error);
@@ -476,11 +476,11 @@ async function updatePlayerDoc(uid, updates) {
     }
 }
 
-async function deletePlayerDoc(uid) {
+async function deletePlayerDoc(_id) {
     const { error } = await supabase
         .from('players')
         .delete()
-        .eq('user_id', uid);
+        .eq('_id', _id);
     
     if (error) {
         console.error('Error deleting player:', error);
@@ -488,11 +488,11 @@ async function deletePlayerDoc(uid) {
     }
 }
 
-async function deleteSessionDoc(uid) {
+async function deleteSessionDoc(_id) {
     const { error } = await supabase
         .from('sessions')
         .delete()
-        .eq('user_id', uid);
+        .eq('_id', _id);
     
     if (error) {
         console.error('Error deleting session:', error);
@@ -515,11 +515,11 @@ async function getAllPlayers() {
 }
 
 // Helper to add items to array in JSONB column
-async function arrayUnionUpdate(uid, field, items) {
+async function arrayUnionUpdate(_id, field, items) {
     const { data: currentData } = await supabase
         .from('players')
         .select(field)
-        .eq('user_id', uid)
+        .eq('_id', _id)
         .single();
     
     if (!currentData) return;
@@ -530,7 +530,7 @@ async function arrayUnionUpdate(uid, field, items) {
     const { error } = await supabase
         .from('players')
         .update({ [field]: newArray })
-        .eq('user_id', uid);
+        .eq('_id', _id);
     
     if (error) {
         console.error(`Error updating ${field}:`, error);
@@ -953,7 +953,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     }
 
     if (user) {
-        Logger.info('Utilisateur connecté', { email: user.email, uid: user.id });
+        Logger.info('Utilisateur connecté', { email: user.email, _id: user.id });
         window._appInitialized = true;
         
         try {
@@ -1188,9 +1188,9 @@ window.submitNewPassword = async () => {
 };
 
 // Récupérer la collection depuis Supabase
-async function fetchUserCollection(uid) {
+async function fetchUserCollection(_id) {
     try {
-        const snap = await getPlayerDoc(uid);
+        const snap = await getPlayerDoc(_id);
         const playerData = snap.data();
         if (snap.exists()) {
             userCollection = playerData.collection || [];
@@ -1212,7 +1212,7 @@ async function fetchUserCollection(uid) {
             // Le compte n'existe pas -> Recréer automatiquement
             console.log("Document joueur inexistant, création...");
             const { data } = await supabase.auth.getUser();
-            await safeSetPlayerDoc(uid, {
+            await safeSetPlayerDoc(_id, {
                 email: data.user.email,
                 collection: [],
                 packs_by_gen: {},
@@ -2170,7 +2170,7 @@ window.closeBooster = async () => {
                         const isQuota = (e && e.code && e.code === 'resource-exhausted') || (e && typeof e.message === 'string' && e.message.toLowerCase().includes('quota'));
                         if (isQuota) {
                             // Fallback: enqueue a merged add-to-collection operation
-                            console.warn('Quota lors de l\'ajout à la collection — mise en file (addToCollection)', { uid: user.id, count: tempBoosterCards.length });
+                            console.warn('Quota lors de l\'ajout à la collection — mise en file (addToCollection)', { _id: user.id, count: tempBoosterCards.length });
                             _enqueueCollectionAdd(user.id, tempBoosterCards);
                         } else {
                             console.error("Erreur ajout collection à la fermeture du booster:", e);
@@ -2230,24 +2230,24 @@ window.closeBooster = async () => {
 
 // --- COOLDOWN PAR GÉNÉRATION ---
 // Helper pour régénérer les packs d'une génération
-async function regeneratePacksForGen(uid, currentGen, packs_by_gen) {
+async function regeneratePacksForGen(_id, currentGen, packs_by_gen) {
     packs_by_gen[currentGen] = {
         available_packs: PACKS_PER_COOLDOWN,
         last_draw_time: 0
     };
     
-    await safeSetPlayerDoc(uid, { 
+    await safeSetPlayerDoc(_id, { 
         packs_by_gen: packs_by_gen
     }, { merge: true });
     
     return PACKS_PER_COOLDOWN;
 }
 
-async function checkCooldown(uid) {
+async function checkCooldown(_id) {
     const genSelect = document.getElementById('gen-select');
     const currentGen = genSelect ? genSelect.value : 'gen7';
     
-    const snap = await getPlayerDoc(uid);
+    const snap = await getPlayerDoc(_id);
     if (snap.exists()) {
         const data = snap.data();
         const packs_by_gen = data.packs_by_gen || {};
@@ -2263,7 +2263,7 @@ async function checkCooldown(uid) {
         // Si le cooldown est passé ET qu'il n'y a plus de packs, régénérer TOUS les packs
         const wasZero = available_packs <= 0;
         if (wasZero && diff >= cooldownMs) {
-            available_packs = await regeneratePacksForGen(uid, currentGen, packs_by_gen);
+            available_packs = await regeneratePacksForGen(_id, currentGen, packs_by_gen);
         }
         
         if (available_packs > 0) {
@@ -2275,11 +2275,11 @@ async function checkCooldown(uid) {
             const timeToNextPack = cooldownMs - diff;
             // S'assurer que le timer n'est jamais négatif
             if (timeToNextPack > 0) {
-                startTimer(timeToNextPack, uid);
+                startTimer(timeToNextPack, _id);
             } else {
                 // Si le temps est déjà passé mais qu'on arrive ici, forcer la régénération
                 // (Ne devrait normalement pas arriver grâce au check ci-dessus)
-                available_packs = await regeneratePacksForGen(uid, currentGen, packs_by_gen);
+                available_packs = await regeneratePacksForGen(_id, currentGen, packs_by_gen);
                 await updatePackQuantity();
                 updatePacksDisplay(available_packs, true);
                 enableBoosterButton(true);
@@ -2300,7 +2300,7 @@ function updatePacksDisplay(count, animate = false) {
     }
 }
 
-function startTimer(durationMs, uid = null) {
+function startTimer(durationMs, _id = null) {
     const btn = document.getElementById('btn-draw');
     const display = document.getElementById('cooldown-display');
     
@@ -2322,7 +2322,7 @@ function startTimer(durationMs, uid = null) {
                 Logger.error('Erreur lors de l\'envoi de la notification de packs prêts', error);
             }
             // Re-vérifier les packs disponibles
-            if (uid) checkCooldown(uid);
+            if (_id) checkCooldown(_id);
             else enableBoosterButton(true);
             return;
         }

@@ -251,7 +251,7 @@
                             admin_notification: player.adminNotification || player.admin_notification || null
                         };
 
-                        // Note: user_id sera null car on n'a pas d'utilisateur Firebase Auth ici
+                        // Note: _id sera null car on n'a pas d'utilisateur Firebase Auth ici
                         // Les utilisateurs devront se reconnecter pour créer leur compte Supabase
                         // On stocke l'email pour référence
 
@@ -270,7 +270,7 @@
                                 .eq('id', existing.id);
                             imported++;
                         } else {
-                            // Create note: this will fail without user_id, 
+                            // Create note: this will fail without _id, 
                             // users need to login first to create auth accounts
                             console.log(`Skipping ${player.email} - user must login first`);
                             skipped++;

@@ -62,26 +62,26 @@ let _pendingRevealed = null; // array of indices to save (shared for current ope
 let _saveBoosterTimer = null;
 const BOOSTER_SAVE_DEBOUNCE_MS = 5000; // flush after 5s of inactivity
 
-async function _flushPendingRevealed(uid) {
-    if (!uid || !_pendingRevealed || _pendingRevealed.length === 0) return;
+async function _flushPendingRevealed(_id) {
+    if (!_id || !_pendingRevealed || _pendingRevealed.length === 0) return;
     const toSave = Array.from(new Set(_pendingRevealed)).sort((a,b)=>a-b);
     _pendingRevealed = null;
     clearTimeout(_saveBoosterTimer);
     _saveBoosterTimer = null;
     try {
-        await safeSetPlayerDoc(uid, { boosterRevealedCards: toSave }, { merge: true });
+        await safeSetPlayerDoc(_id, { boosterRevealedCards: toSave }, { merge: true });
     } catch (e) {
         console.error('Erreur sauvegarde (batch) révélation:', e);
     }
 }
 
-function _scheduleSaveRevealed(uid) {
-    if (!uid) return;
+function _scheduleSaveRevealed(_id) {
+    if (!_id) return;
     if (!_saveBoosterTimer) {
-        _saveBoosterTimer = setTimeout(() => _flushPendingRevealed(uid), BOOSTER_SAVE_DEBOUNCE_MS);
+        _saveBoosterTimer = setTimeout(() => _flushPendingRevealed(_id), BOOSTER_SAVE_DEBOUNCE_MS);
     } else {
         clearTimeout(_saveBoosterTimer);
-        _saveBoosterTimer = setTimeout(() => _flushPendingRevealed(uid), BOOSTER_SAVE_DEBOUNCE_MS);
+        _saveBoosterTimer = setTimeout(() => _flushPendingRevealed(_id), BOOSTER_SAVE_DEBOUNCE_MS);
     }
 }
 
@@ -108,22 +108,22 @@ function _writePlayerWriteQueue(queue) {
     }
 }
 
-function _enqueuePlayerWrite(uid, data, options = {}) {
+function _enqueuePlayerWrite(_id, data, options = {}) {
     const queue = _readPlayerWriteQueue();
-    queue.push({ uid, data, options, attempts: 0, createdAt: Date.now() });
+    queue.push({ _id, data, options, attempts: 0, createdAt: Date.now() });
     _writePlayerWriteQueue(queue);
     _schedulePlayerQueueFlush();
 }
 
 // Enqueue a collection-add operation that can be merged client-side to avoid
 // creating many separate writes for the same user. Items should be plain JS objects.
-function _enqueueCollectionAdd(uid, items = []) {
+function _enqueueCollectionAdd(_id, items = []) {
     if (!Array.isArray(items) || items.length === 0) return;
     const queue = _readPlayerWriteQueue();
-    // Try to find existing addToCollection for same uid and merge
+    // Try to find existing addToCollection for same _id and merge
     let found = false;
     for (let entry of queue) {
-        if (entry && entry.uid === uid && entry.op === 'addToCollection') {
+        if (entry && entry._id === _id && entry.op === 'addToCollection') {
             entry.items = (entry.items || []).concat(items);
             entry.createdAt = Math.min(entry.createdAt || Date.now(), Date.now());
             found = true;
@@ -131,7 +131,7 @@ function _enqueueCollectionAdd(uid, items = []) {
         }
     }
     if (!found) {
-        queue.push({ uid, op: 'addToCollection', items: items.slice(), attempts: 0, createdAt: Date.now() });
+        queue.push({ _id, op: 'addToCollection', items: items.slice(), attempts: 0, createdAt: Date.now() });
     }
     _writePlayerWriteQueue(queue);
     _schedulePlayerQueueFlush();
@@ -162,10 +162,10 @@ async function _processPlayerWriteQueue() {
                         const deduped = Array.from(new Map(items.map(c => [c && c.id ? c.id : JSON.stringify(c), c])).values());
                         items = deduped;
                     } catch (er) { /* fallback: use original items */ }
-                    await setDoc(doc(db, 'players', item.uid), { collection: arrayUnion(...items) }, { merge: true });
+                    await setDoc(doc(db, 'players', item._id), { collection: arrayUnion(...items) }, { merge: true });
                 }
             } else {
-                await setDoc(doc(db, 'players', item.uid), item.data, item.options || { merge: true });
+                await setDoc(doc(db, 'players', item._id), item.data, item.options || { merge: true });
             }
             // success -> remove this item
             queue.splice(i, 1);
@@ -198,26 +198,26 @@ async function _processPlayerWriteQueue() {
     if (changed) _writePlayerWriteQueue(queue);
 }
 
-async function safeSetPlayerDoc(uid, data, options = { merge: true }) {
+async function safeSetPlayerDoc(_id, data, options = { merge: true }) {
     try {
         // Simple per-user rate limiter to avoid immediate write bursts from UI
         if (!window._lastPlayerWriteAt) window._lastPlayerWriteAt = {};
         const MIN_WRITE_INTERVAL_MS = 1000; // 1s per-user minimum
-        const last = window._lastPlayerWriteAt[uid] || 0;
+        const last = window._lastPlayerWriteAt[_id] || 0;
         const now = Date.now();
         if (now - last < MIN_WRITE_INTERVAL_MS) {
             // enqueue instead of immediate write to avoid bursts
-            _enqueuePlayerWrite(uid, data, options);
+            _enqueuePlayerWrite(_id, data, options);
             return;
         }
 
-        await setDoc(doc(db, 'players', uid), data, options);
-        window._lastPlayerWriteAt[uid] = Date.now();
+        await setDoc(doc(db, 'players', _id), data, options);
+        window._lastPlayerWriteAt[_id] = Date.now();
     } catch (e) {
         const isQuota = (e && e.code && e.code === 'resource-exhausted') || (e && typeof e.message === 'string' && e.message.toLowerCase().includes('quota'));
         if (isQuota) {
-            console.warn('Quota Firestore dépassé — mise en file d\'attente de l\'écriture', { uid, data });
-            _enqueuePlayerWrite(uid, data, options);
+            console.warn('Quota Firestore dépassé — mise en file d\'attente de l\'écriture', { _id, data });
+            _enqueuePlayerWrite(_id, data, options);
         } else {
             // rethrow for other handlers
             throw e;
@@ -616,7 +616,7 @@ window.resetAccount = async () => {
     if (!user) return;
     
     try {
-        await safeSetPlayerDoc(user.uid, {
+        await safeSetPlayerDoc(user._id, {
             collection: [],
             packsByGen: {},
             currentBooster: [],
@@ -645,8 +645,8 @@ window.deleteAccount = async () => {
     
     try {
         // Supprimer les données Firestore
-        await deleteDoc(doc(db, "players", user.uid));
-        await deleteDoc(doc(db, "sessions", user.uid));
+        await deleteDoc(doc(db, "players", user._id));
+        await deleteDoc(doc(db, "sessions", user._id));
         
         // Supprimer le compte Firebase Auth
         await user.delete();
@@ -678,7 +678,7 @@ window.updatePackQuantity = async () => {
         const selectedGen = genSelect.value;
         
         try {
-            const snap = await getDoc(doc(db, "players", user.uid));
+            const snap = await getDoc(doc(db, "players", user._id));
             if (snap.exists()) {
                 const packsByGen = snap.data().packsByGen || {};
                 const genData = packsByGen[selectedGen] || { availablePacks: PACKS_PER_COOLDOWN };
@@ -787,11 +787,11 @@ onAuthStateChanged(auth, async (user) => {
     }
     
     if (user) {
-        Logger.info('Utilisateur connecté', { email: user.email, uid: user.uid });
+        Logger.info('Utilisateur connecté', { email: user.email, _id: user._id });
         
         try {
             // Vérifier l'instance unique
-            const canContinue = await startSessionMonitoring(user.uid);
+            const canContinue = await startSessionMonitoring(user._id);
             if (!canContinue) {
                 Logger.warn('Instance unique bloquée');
                 return;
@@ -847,10 +847,10 @@ onAuthStateChanged(auth, async (user) => {
 
             // 1. Charger la collection
             Logger.debug('Chargement collection utilisateur');
-            await fetchUserCollection(user.uid);
+            await fetchUserCollection(user._id);
             
             // 2. Vérifier si un booster est en cours d'ouverture
-            const snap = await getDoc(doc(db, "players", user.uid));
+            const snap = await getDoc(doc(db, "players", user._id));
             if (snap.exists() && snap.data().currentBooster && snap.data().currentBooster.length > 0) {
                 // Restaurer l'ouverture en cours
                 Logger.info('Restauration booster en cours');
@@ -864,7 +864,7 @@ onAuthStateChanged(auth, async (user) => {
                 const notif = snap.data().adminNotification;
                 window.showPopup("Notification Admin", notif.message);
                 // Supprimer la notification après affichage (utiliser safe write)
-                await safeSetPlayerDoc(user.uid, { adminNotification: null }, { merge: true });
+                await safeSetPlayerDoc(user._id, { adminNotification: null }, { merge: true });
             }
             
             // 3. Charger le classeur (Gen par défaut)
@@ -874,7 +874,7 @@ onAuthStateChanged(auth, async (user) => {
             await changeGen(); 
 
             // 4. Vérifier le Cooldown
-            if (!isAdmin) await checkCooldown(user.uid);
+            if (!isAdmin) await checkCooldown(user._id);
             else enableBoosterButton(true);
 
             // Fin du chargement
@@ -913,9 +913,9 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 // Récupérer la collection depuis Firebase
-async function fetchUserCollection(uid) {
+async function fetchUserCollection(_id) {
     try {
-        const snap = await getDoc(doc(db, "players", uid));
+        const snap = await getDoc(doc(db, "players", _id));
         if (snap.exists()) {
             userCollection = snap.data().collection || [];
             const countEl = document.getElementById('card-count');
@@ -935,7 +935,7 @@ async function fetchUserCollection(uid) {
         } else {
             // Le compte n'existe pas en Firestore -> Recréer automatiquement
             console.log("Document joueur inexistant, création...");
-            await safeSetPlayerDoc(uid, {
+            await safeSetPlayerDoc(_id, {
                 email: auth.currentUser.email,
                 collection: [],
                 packsByGen: {},
@@ -970,7 +970,7 @@ async function updatePointsDisplay() {
     const user = auth.currentUser;
     if (!user) return;
     
-    const snap = await getDoc(doc(db, "players", user.uid));
+    const snap = await getDoc(doc(db, "players", user._id));
     if (!snap.exists()) return;
     
     const data = snap.data();
@@ -1036,7 +1036,7 @@ window.useBonusPack = async () => {
     const user = auth.currentUser;
     if (!user) return;
     
-    const snap = await getDoc(doc(db, "players", user.uid));
+    const snap = await getDoc(doc(db, "players", user._id));
     if (!snap.exists()) return;
     
     const data = snap.data();
@@ -1062,7 +1062,7 @@ window.openShop = async () => {
     const user = auth.currentUser;
     if (!user) return;
     
-    const snap = await getDoc(doc(db, "players", user.uid));
+    const snap = await getDoc(doc(db, "players", user._id));
     if (!snap.exists()) return;
     
     const data = snap.data();
@@ -1128,7 +1128,7 @@ window.changeGen = async () => {
     // Vérifier le cooldown de cette génération
     const user = auth.currentUser;
     if (user && user.email !== ADMIN_EMAIL) {
-        await checkCooldown(user.uid);
+        await checkCooldown(user._id);
     }
     
     // Mettre à jour la disponibilité du bouton selon la quantité sélectionnée
@@ -1484,7 +1484,7 @@ window.drawCard = async (overridePackQuantity = null, options = {}) => {
     if (!user) return;
     const isAdmin = (user.email === ADMIN_EMAIL);
     // Récupérer le rôle/utilisateur (utile pour VIP)
-    const userSnapForDraw = await getDoc(doc(db, "players", user.uid));
+    const userSnapForDraw = await getDoc(doc(db, "players", user._id));
     const userRoleForDraw = userSnapForDraw && userSnapForDraw.exists() ? userSnapForDraw.data().role : null;
     const isVip = userRoleForDraw === 'vip';
     const btn = document.getElementById('btn-draw');
@@ -1507,7 +1507,7 @@ window.drawCard = async (overridePackQuantity = null, options = {}) => {
     // Vérifier si l'utilisateur a assez de packs disponibles (sauf en bonus-mode)
     const isBonus = !!options.isBonus;
     if (!isAdmin && !isBonus) {
-        const snap = await getDoc(doc(db, "players", user.uid));
+        const snap = await getDoc(doc(db, "players", user._id));
         if (snap.exists()) {
             const packsByGen = snap.data().packsByGen || {};
             const genData = packsByGen[selectedGen] || { availablePacks: PACKS_PER_COOLDOWN };
@@ -1597,7 +1597,7 @@ window.drawCard = async (overridePackQuantity = null, options = {}) => {
         };
         
         // Récupérer les données actuelles une seule fois
-        const currentSnap = await getDoc(doc(db, "players", user.uid));
+        const currentSnap = await getDoc(doc(db, "players", user._id));
         const currentData = currentSnap.exists() ? currentSnap.data() : {};
         const packsByGen = currentData.packsByGen || {};
         const genData = packsByGen[selectedGen] || { availablePacks: PACKS_PER_COOLDOWN, lastDrawTime: 0, points: 0, bonusPacks: 0 };
@@ -1639,7 +1639,7 @@ window.drawCard = async (overridePackQuantity = null, options = {}) => {
         updateData.packsByGen = packsByGen;
         
         // Utiliser safeSetPlayerDoc pour gérer les erreurs de quota et mettre en file si nécessaire
-        await safeSetPlayerDoc(user.uid, updateData, { merge: true });
+        await safeSetPlayerDoc(user._id, updateData, { merge: true });
 
         // Ajout à la collection locale
         userCollection.push(...tempBoosterCards);
@@ -1659,7 +1659,7 @@ window.drawCard = async (overridePackQuantity = null, options = {}) => {
         // Gestion Timer
         if (!isAdmin) {
             // Si plus de packs disponibles pour cette génération, démarrer le timer
-            const snap = await getDoc(doc(db, "players", user.uid));
+            const snap = await getDoc(doc(db, "players", user._id));
             if (snap.exists()) {
                 const packsByGen = snap.data().packsByGen || {};
                 const genData = packsByGen[selectedGen] || { availablePacks: 0 };
@@ -1667,7 +1667,7 @@ window.drawCard = async (overridePackQuantity = null, options = {}) => {
                 
                 if (availablePacks === 0) {
                     const cooldownMins = isVip ? VIP_COOLDOWN_MINUTES : COOLDOWN_MINUTES;
-                    startTimer(cooldownMins * 60 * 1000, user.uid);
+                    startTimer(cooldownMins * 60 * 1000, user._id);
                 }
             }
         } else { 
@@ -1790,7 +1790,7 @@ function openBoosterVisual(alreadyRevealed = []) {
                 const user = auth.currentUser;
                 if (user) {
                     _pendingRevealed = _pendingRevealed ? _pendingRevealed.concat(index) : [index];
-                    _scheduleSaveRevealed(user.uid);
+                    _scheduleSaveRevealed(user._id);
                 }
                 
                 // Si tout est révélé, on montre le bouton OK
@@ -1850,7 +1850,7 @@ window.revealAllCards = async () => {
             // push into pending buffer and flush quickly
             _pendingRevealed = allIndices;
             // force immediate flush
-            await _flushPendingRevealed(user.uid);
+            await _flushPendingRevealed(user._id);
         } catch (e) {
             console.error("Erreur sauvegarde révélation complète:", e);
         }
@@ -1882,7 +1882,7 @@ window.closeBooster = async () => {
     if (user) {
         try {
             // Ensure any pending revealed indices are flushed before clearing
-            await _flushPendingRevealed(user.uid);
+            await _flushPendingRevealed(user._id);
 
             // Ajouter les cartes ouvertes à la collection en une seule écriture
             // (réduit les écritures fréquentes qui causaient des erreurs de quota)
@@ -1890,13 +1890,13 @@ window.closeBooster = async () => {
                 if (Array.isArray(tempBoosterCards) && tempBoosterCards.length > 0) {
                     try {
                         // Try immediate write first
-                        await setDoc(doc(db, 'players', user.uid), { collection: arrayUnion(...tempBoosterCards) }, { merge: true });
+                        await setDoc(doc(db, 'players', user._id), { collection: arrayUnion(...tempBoosterCards) }, { merge: true });
                     } catch (e) {
                         const isQuota = (e && e.code && e.code === 'resource-exhausted') || (e && typeof e.message === 'string' && e.message.toLowerCase().includes('quota'));
                         if (isQuota) {
                             // Fallback: enqueue a merged add-to-collection operation
-                            console.warn('Quota lors de l\'ajout à la collection — mise en file (addToCollection)', { uid: user.uid, count: tempBoosterCards.length });
-                            _enqueueCollectionAdd(user.uid, tempBoosterCards);
+                            console.warn('Quota lors de l\'ajout à la collection — mise en file (addToCollection)', { _id: user._id, count: tempBoosterCards.length });
+                            _enqueueCollectionAdd(user._id, tempBoosterCards);
                         } else {
                             console.error("Erreur ajout collection à la fermeture du booster:", e);
                         }
@@ -1907,7 +1907,7 @@ window.closeBooster = async () => {
             }
 
             // Nettoyer l'état du booster en cours dans Firestore
-            await safeSetPlayerDoc(user.uid, {
+            await safeSetPlayerDoc(user._id, {
                 currentBooster: [],
                 boosterRevealedCards: []
             }, { merge: true });
@@ -1924,7 +1924,7 @@ window.closeBooster = async () => {
             btn.innerHTML = '<div class="booster-content">OUVRIR UN BOOSTER</div>';
         } else {
             // Vérifier les packs disponibles pour les joueurs normaux
-            await checkCooldown(user.uid);
+            await checkCooldown(user._id);
         }
     }
     
@@ -1943,24 +1943,24 @@ window.closeBooster = async () => {
 
 // --- COOLDOWN PAR GÉNÉRATION ---
 // Helper pour régénérer les packs d'une génération
-async function regeneratePacksForGen(uid, currentGen, packsByGen) {
+async function regeneratePacksForGen(_id, currentGen, packsByGen) {
     packsByGen[currentGen] = {
         availablePacks: PACKS_PER_COOLDOWN,
         lastDrawTime: 0
     };
     
-    await safeSetPlayerDoc(uid, { 
+    await safeSetPlayerDoc(_id, { 
         packsByGen: packsByGen
     }, { merge: true });
     
     return PACKS_PER_COOLDOWN;
 }
 
-async function checkCooldown(uid) {
+async function checkCooldown(_id) {
     const genSelect = document.getElementById('gen-select');
     const currentGen = genSelect ? genSelect.value : 'gen7';
     
-    const snap = await getDoc(doc(db, "players", uid));
+    const snap = await getDoc(doc(db, "players", _id));
     if (snap.exists()) {
         const data = snap.data();
         const packsByGen = data.packsByGen || {};
@@ -1976,7 +1976,7 @@ async function checkCooldown(uid) {
         // Si le cooldown est passé ET qu'il n'y a plus de packs, régénérer TOUS les packs
         const wasZero = availablePacks <= 0;
         if (wasZero && diff >= cooldownMs) {
-            availablePacks = await regeneratePacksForGen(uid, currentGen, packsByGen);
+            availablePacks = await regeneratePacksForGen(_id, currentGen, packsByGen);
         }
         
         if (availablePacks > 0) {
@@ -1988,11 +1988,11 @@ async function checkCooldown(uid) {
             const timeToNextPack = cooldownMs - diff;
             // S'assurer que le timer n'est jamais négatif
             if (timeToNextPack > 0) {
-                startTimer(timeToNextPack, uid);
+                startTimer(timeToNextPack, _id);
             } else {
                 // Si le temps est déjà passé mais qu'on arrive ici, forcer la régénération
                 // (Ne devrait normalement pas arriver grâce au check ci-dessus)
-                availablePacks = await regeneratePacksForGen(uid, currentGen, packsByGen);
+                availablePacks = await regeneratePacksForGen(_id, currentGen, packsByGen);
                 await updatePackQuantity();
                 updatePacksDisplay(availablePacks, true);
                 enableBoosterButton(true);
@@ -2013,7 +2013,7 @@ function updatePacksDisplay(count, animate = false) {
     }
 }
 
-function startTimer(durationMs, uid = null) {
+function startTimer(durationMs, _id = null) {
     const btn = document.getElementById('btn-draw');
     const display = document.getElementById('cooldown-display');
     
@@ -2035,7 +2035,7 @@ function startTimer(durationMs, uid = null) {
                 Logger.error('Erreur lors de l\'envoi de la notification de packs prêts', error);
             }
             // Re-vérifier les packs disponibles
-            if (uid) checkCooldown(uid);
+            if (_id) checkCooldown(_id);
             else enableBoosterButton(true);
             return;
         }
@@ -2123,7 +2123,7 @@ window.requestNotification = async () => {
             const user = auth.currentUser;
             if (user) {
                 try {
-                    await safeSetPlayerDoc(user.uid, { notificationsEnabled: true }, { merge: true });
+                    await safeSetPlayerDoc(user._id, { notificationsEnabled: true }, { merge: true });
                 } catch (error) {
                     Logger.error('Erreur lors de la sauvegarde de la préférence de notification', error);
                 }
@@ -2176,12 +2176,12 @@ window.toggleNotifications = async () => {
     }
 
     try {
-        const snap = await getDoc(doc(db, 'players', user.uid));
+        const snap = await getDoc(doc(db, 'players', user._id));
         const current = snap.exists() ? (snap.data().notificationsEnabled || false) : false;
 
         if (current) {
             // Désactiver
-            await safeSetPlayerDoc(user.uid, { notificationsEnabled: false }, { merge: true });
+            await safeSetPlayerDoc(user._id, { notificationsEnabled: false }, { merge: true });
             updateBellIcon();
             window.showPopup('Notifications', 'Notifications désactivées.');
         } else {
@@ -2345,10 +2345,10 @@ window.togglePasswordVisibility = (btn) => {
 async function authUser(promise) {
     try {
         const res = await promise;
-        const ref = doc(db, "players", res.user.uid);
+        const ref = doc(db, "players", res.user._id);
         const snap = await getDoc(ref);
         if (!snap.exists()) {
-            await safeSetPlayerDoc(res.user.uid, {
+            await safeSetPlayerDoc(res.user._id, {
                 email: res.user.email,
                 collection: [],
                 packsByGen: {},

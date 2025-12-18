@@ -24,7 +24,7 @@ supabase.auth.onAuthStateChange(async (event, session) => {
         const { data } = await supabase
             .from('players')
             .select('role')
-            .eq('user_id', user.id)
+            .eq('_id', user.id)
             .single();
             
         if (data && data.role === 'admin') {
@@ -66,15 +66,15 @@ window.loadAllPlayers = async () => {
 
             const tr = document.createElement('tr');
                 let actions = `
-                <button onclick="resetCooldown('${player.user_id}', '${player.email}')" class="btn-action btn-cooldown"><img src="assets/icons/hourglass.svg" class="title-icon" alt="hourglass"> Reset</button>
-                <button onclick="resetPlayer('${player.user_id}', '${player.email}')" class="btn-action btn-reset"><img src="assets/icons/triangle-alert.svg" class="title-icon" alt="warn"> Deck</button>
-                <button onclick="deleteAccount('${player.user_id}', '${player.email}')" class="btn-action btn-delete"><img src="assets/icons/x.svg" class="title-icon" alt="del"> DEL</button>
+                <button onclick="resetCooldown('${player._id}', '${player.email}')" class="btn-action btn-cooldown"><img src="assets/icons/hourglass.svg" class="title-icon" alt="hourglass"> Reset</button>
+                <button onclick="resetPlayer('${player._id}', '${player.email}')" class="btn-action btn-reset"><img src="assets/icons/triangle-alert.svg" class="title-icon" alt="warn"> Deck</button>
+                <button onclick="deleteAccount('${player._id}', '${player.email}')" class="btn-action btn-delete"><img src="assets/icons/x.svg" class="title-icon" alt="del"> DEL</button>
             `;
             // Afficher le bouton rôle seulement si ce n'est pas un admin
             if (role !== 'admin') {
                 let roleButtonEmoji = role === 'vip' ? '<img src="assets/icons/arrow-down-from-line.svg" class="title-icon" alt="down">' : '<img src="assets/icons/arrow-up-from-line.svg" class="title-icon" alt="up">';
                 let roleButtonLabel = role === 'vip' ? 'Rétrograder' : 'VIP';
-                actions = `<button onclick="toggleRole('${player.user_id}', '${role}')" class="btn-action btn-role" style="background:#8e44ad">${roleButtonEmoji} ${roleButtonLabel}</button>` + actions;
+                actions = `<button onclick="toggleRole('${player._id}', '${role}')" class="btn-action btn-role" style="background:#8e44ad">${roleButtonEmoji} ${roleButtonLabel}</button>` + actions;
             }
             tr.innerHTML = `
                 <td><strong>${player.email}</strong></td>
@@ -96,7 +96,7 @@ window.loadAllPlayers = async () => {
 };
 
 // CHANGER LE RÔLE (ADMIN <-> PLAYER)
-window.toggleRole = async (uid, currentRole) => {
+window.toggleRole = async (_id, currentRole) => {
     // Ne jamais changer le rôle d'un admin ici
     if (currentRole === 'admin') return;
     let newRole = 'vip';
@@ -107,7 +107,7 @@ window.toggleRole = async (uid, currentRole) => {
         const { error } = await supabase
             .from('players')
             .update({ role: newRole })
-            .eq('user_id', uid);
+            .eq('_id', _id);
             
         if (error) throw error;
         window.showPopup("Succès", `Rôle mis à jour : ${newRole}`);
@@ -117,7 +117,7 @@ window.toggleRole = async (uid, currentRole) => {
     }
 };
 
-window.resetCooldown = async (uid, email) => {
+window.resetCooldown = async (_id, email) => {
     try {
         // Reset cooldowns pour toutes les générations
         const packs_by_gen = {};
@@ -146,7 +146,7 @@ window.resetCooldown = async (uid, email) => {
                     timestamp: Date.now()
                 }
             })
-            .eq('user_id', uid);
+            .eq('_id', _id);
             
         if (error) throw error;
         window.showPopup("Succès", `Tous les cooldowns reset pour ${email}`); 
@@ -156,7 +156,7 @@ window.resetCooldown = async (uid, email) => {
     }
 };
 
-window.resetPlayer = async (uid, email) => {
+window.resetPlayer = async (_id, email) => {
     if (!confirm(`Vider tout le deck de ${email} ?`)) return;
     try { 
         const { error } = await supabase
@@ -166,7 +166,7 @@ window.resetPlayer = async (uid, email) => {
                 last_draw_time: 0, 
                 packs_by_gen: {} 
             })
-            .eq('user_id', uid);
+            .eq('_id', _id);
             
         if (error) throw error;
         window.showPopup("Succès", "Deck vidé."); 
@@ -176,13 +176,13 @@ window.resetPlayer = async (uid, email) => {
     }
 };
 
-window.deleteAccount = async (uid, email) => {
+window.deleteAccount = async (_id, email) => {
     if (!confirm(`SUPPRIMER DÉFINITIVEMENT ${email} ?`)) return;
     try { 
         const { error } = await supabase
             .from('players')
             .delete()
-            .eq('user_id', uid);
+            .eq('_id', _id);
             
         if (error) throw error;
         window.showPopup("Adieu", "Compte supprimé."); 

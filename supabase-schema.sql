@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Create players table (equivalent to Firebase 'players' collection)
 CREATE TABLE IF NOT EXISTS players (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE NOT NULL,
+    _id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE NOT NULL,
     email TEXT NOT NULL,
     role TEXT DEFAULT 'player' CHECK (role IN ('player', 'vip', 'admin')),
     collection JSONB DEFAULT '[]'::jsonb,
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS players (
 -- Create sessions table (equivalent to Firebase 'sessions' collection)
 CREATE TABLE IF NOT EXISTS sessions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    _id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     email TEXT NOT NULL,
     session_id TEXT NOT NULL,
     last_ping BIGINT DEFAULT 0,
@@ -36,10 +36,10 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 
 -- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_players_user_id ON players(user_id);
+CREATE INDEX IF NOT EXISTS idx_players_user_id ON players(_id);
 CREATE INDEX IF NOT EXISTS idx_players_email ON players(email);
 CREATE INDEX IF NOT EXISTS idx_players_role ON players(role);
-CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_session_id ON sessions(session_id);
 
 -- Create function to automatically update updated_at timestamp
@@ -84,18 +84,18 @@ DROP POLICY IF EXISTS "Users can delete their own session" ON sessions;
 -- Users can view their own data
 CREATE POLICY "Users can view their own player data"
     ON players FOR SELECT
-    USING (auth.uid() = user_id);
+    USING (auth._id() = _id);
 
 -- Users can update their own data (but cannot change role unless admin)
 CREATE POLICY "Users can update their own player data"
     ON players FOR UPDATE
-    USING (auth.uid() = user_id)
-    WITH CHECK (auth.uid() = user_id);
+    USING (auth._id() = _id)
+    WITH CHECK (auth._id() = _id);
 
 -- Users can insert their own data (only as 'player' role unless they are admin)
 CREATE POLICY "Users can insert their own player data"
     ON players FOR INSERT
-    WITH CHECK (auth.uid() = user_id AND role = 'player');
+    WITH CHECK (auth._id() = _id AND role = 'player');
 
 -- Admins can view all data
 CREATE POLICY "Admins can view all player data"
@@ -139,19 +139,19 @@ CREATE TRIGGER prevent_role_change_unless_admin
 -- RLS Policies for sessions table
 CREATE POLICY "Users can view their own session"
     ON sessions FOR SELECT
-    USING (auth.uid() = user_id);
+    USING (auth._id() = _id);
 
 CREATE POLICY "Users can update their own session"
     ON sessions FOR UPDATE
-    USING (auth.uid() = user_id);
+    USING (auth._id() = _id);
 
 CREATE POLICY "Users can insert their own session"
     ON sessions FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK (auth._id() = _id);
 
 CREATE POLICY "Users can delete their own session"
     ON sessions FOR DELETE
-    USING (auth.uid() = user_id);
+    USING (auth._id() = _id);
 
 -- Create a function to get or create player record
 CREATE OR REPLACE FUNCTION get_or_create_player(
@@ -165,11 +165,11 @@ BEGIN
     -- Try to get existing player
     SELECT id INTO player_id
     FROM players
-    WHERE user_id = p_user_id;
+    WHERE _id = p_user_id;
     
     -- If not exists, create new player
     IF player_id IS NULL THEN
-        INSERT INTO players (user_id, email, role, collection, packs_by_gen, points, bonus_packs)
+        INSERT INTO players (_id, email, role, collection, packs_by_gen, points, bonus_packs)
         VALUES (p_user_id, p_email, 'player', '[]'::jsonb, '{}'::jsonb, 0, 0)
         RETURNING id INTO player_id;
     END IF;

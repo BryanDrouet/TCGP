@@ -6,7 +6,7 @@ cp script.js script.js.temp
 
 # Replace common patterns
 sed -i 's/auth\.currentUser/await getCurrentUser()/g' script.js.temp
-sed -i 's/user\.uid/user.id/g' script.js.temp
+sed -i 's/user\._id/user.id/g' script.js.temp
 
 # Replace Firebase field names with Supabase (snake_case)
 sed -i 's/packsByGen/packs_by_gen/g' script.js.temp

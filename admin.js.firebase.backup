@@ -32,7 +32,7 @@ window.closePopup = () => { document.getElementById('custom-popup-overlay').styl
 onAuthStateChanged(auth, async (user) => {
     const loader = document.getElementById('global-loader');
     if (user) {
-        const snap = await getDoc(doc(db, "players", user.uid));
+        const snap = await getDoc(doc(db, "players", user._id));
         if (snap.exists() && snap.data().role === 'admin') {
             loader.style.display = 'none';
             loadAllPlayers();
@@ -94,7 +94,7 @@ window.loadAllPlayers = async () => {
 };
 
 // CHANGER LE RÔLE (ADMIN <-> PLAYER)
-window.toggleRole = async (uid, currentRole) => {
+window.toggleRole = async (_id, currentRole) => {
     // Ne jamais changer le rôle d'un admin ici
     if (currentRole === 'admin') return;
     let newRole = 'vip';
@@ -102,7 +102,7 @@ window.toggleRole = async (uid, currentRole) => {
     if (!confirm(`Passer cet utilisateur en ${newRole.toUpperCase()} ?`)) return;
 
     try {
-        await updateDoc(doc(db, "players", uid), { role: newRole });
+        await updateDoc(doc(db, "players", _id), { role: newRole });
         window.showPopup("Succès", `Rôle mis à jour : ${newRole}`);
         loadAllPlayers();
     } catch (e) {
@@ -110,7 +110,7 @@ window.toggleRole = async (uid, currentRole) => {
     }
 };
 
-window.resetCooldown = async (uid, email) => {
+window.resetCooldown = async (_id, email) => {
     try {
         // Reset cooldowns pour toutes les générations
         const packsByGen = {};
@@ -129,7 +129,7 @@ window.resetCooldown = async (uid, email) => {
             bonusPacks: 0
         };
 
-        await updateDoc(doc(db, "players", uid), {
+        await updateDoc(doc(db, "players", _id), {
             packsByGen: packsByGen,
                 adminNotification: {
                 type: 'cooldown_reset',
@@ -144,10 +144,10 @@ window.resetCooldown = async (uid, email) => {
     }
 };
 
-window.resetPlayer = async (uid, email) => {
+window.resetPlayer = async (_id, email) => {
     if (!confirm(`Vider tout le deck de ${email} ?`)) return;
     try { 
-        await updateDoc(doc(db, "players", uid), { 
+        await updateDoc(doc(db, "players", _id), { 
             collection: [], 
             lastDrawTime: 0, 
             packsByGen: {} 
@@ -159,7 +159,7 @@ window.resetPlayer = async (uid, email) => {
     }
 };
 
-window.deleteAccount = async (uid, email) => {
+window.deleteAccount = async (_id, email) => {
     if (!confirm(`SUPPRIMER DÉFINITIVEMENT ${email} ?`)) return;
-    try { await deleteDoc(doc(db, "players", uid)); window.showPopup("Adieu", "Compte supprimé."); loadAllPlayers(); } catch (e) { window.showPopup("Erreur", e.message); }
+    try { await deleteDoc(doc(db, "players", _id)); window.showPopup("Adieu", "Compte supprimé."); loadAllPlayers(); } catch (e) { window.showPopup("Erreur", e.message); }
 };
