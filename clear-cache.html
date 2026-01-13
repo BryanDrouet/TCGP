@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nettoyage du Cache - TCG</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .status {
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            background: #2c3e50;
+            border: 2px solid #3b4cca;
+        }
+        button {
+            padding: 15px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #3b4cca;
+            color: white;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #4a5dd9;
+        }
+        .success {
+            color: #4CAF50;
+        }
+        .error {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧹 Nettoyage du Cache et Service Worker</h1>
+    <div class="status" id="status">
+        <p>Cliquez sur les boutons ci-dessous pour nettoyer le cache et désactiver le Service Worker.</p>
+    </div>
+
+    <button onclick="clearAllCaches()">🗑️ Vider tous les caches</button>
+    <button onclick="unregisterServiceWorker()">❌ Désinscrire Service Worker</button>
+    <button onclick="clearLocalStorage()">🔄 Vider LocalStorage</button>
+    <button onclick="doEverything()">⚡ TOUT NETTOYER</button>
+    <br><br>
+    <button onclick="window.location.href='index.html'" style="background: #27ae60;">✅ Retour au site</button>
+
+    <script>
+        function log(message, type = 'info') {
+            const status = document.getElementById('status');
+            const color = type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#ffde00';
+            status.innerHTML += `<p style="color: ${color}">${message}</p>`;
+        }
+
+        async function clearAllCaches() {
+            try {
+                const cacheNames = await caches.keys();
+                log(`Trouvé ${cacheNames.length} cache(s) à supprimer...`);
+                
+                for (const cacheName of cacheNames) {
+                    await caches.delete(cacheName);
+                    log(`✓ Cache supprimé: ${cacheName}`, 'success');
+                }
+                
+                if (cacheNames.length === 0) {
+                    log('Aucun cache à supprimer', 'success');
+                } else {
+                    log(`✓ ${cacheNames.length} cache(s) supprimé(s) !`, 'success');
+                }
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function unregisterServiceWorker() {
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    log(`Trouvé ${registrations.length} Service Worker(s)...`);
+                    
+                    for (const registration of registrations) {
+                        await registration.unregister();
+                        log(`✓ Service Worker désinscrit: ${registration.scope}`, 'success');
+                    }
+                    
+                    if (registrations.length === 0) {
+                        log('Aucun Service Worker à désinscrire', 'success');
+                    } else {
+                        log(`✓ ${registrations.length} Service Worker(s) désinscrit(s) !`, 'success');
+                    }
+                } else {
+                    log('Service Worker non supporté par ce navigateur', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        function clearLocalStorage() {
+            try {
+                const itemCount = localStorage.length;
+                localStorage.clear();
+                log(`✓ LocalStorage vidé (${itemCount} éléments supprimés)`, 'success');
+            } catch (error) {
+                log(`❌ Erreur: ${error.message}`, 'error');
+            }
+        }
+
+        async function doEverything() {
+            document.getElementById('status').innerHTML = '<h3>Nettoyage en cours...</h3>';
+            await clearAllCaches();
+            await unregisterServiceWorker();
+            clearLocalStorage();
+            log('═══════════════════════════════', 'success');
+            log('✓ NETTOYAGE COMPLET TERMINÉ !', 'success');
+            log('Fermez tous les onglets et redémarrez le navigateur', 'success');
+        }
+    </script>
+</body>
+</html>

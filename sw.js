@@ -1,14 +1,7 @@
-// Service Worker pour PWA
-const CACHE_NAME = 'poke-tcg-v5';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/script.js',
-  '/generator.js',
-  '/favicon.ico',
-  '/manifest.json'
-];
+// Service Worker désactivé temporairement pour éviter les problèmes de cache
+// Pour réactiver: décommenter le code et mettre à jour CACHE_NAME
+const CACHE_NAME = 'poke-tcg-v6-disabled';
+const urlsToCache = [];
 
 // Fonction de logging pour le Service Worker
 function swLog(level, message, data = null) {
@@ -22,35 +15,21 @@ function swLog(level, message, data = null) {
 
 // Installation du Service Worker
 self.addEventListener('install', event => {
-  swLog('info', 'Installation du Service Worker');
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        swLog('info', 'Cache ouvert, ajout des ressources');
-        return cache.addAll(urlsToCache);
-      })
-      .then(() => {
-        swLog('info', 'Toutes les ressources ont été mises en cache');
-      })
-      .catch(error => {
-        swLog('error', 'Erreur lors de la mise en cache', error);
-      })
-  );
-  // Forcer l'activation du nouveau SW dès l'installation
+  swLog('info', 'Installation du Service Worker (mode désactivé)');
+  // Cache désactivé - skipWaiting immédiat
   self.skipWaiting();
 });
 
 // Activation et nettoyage des anciens caches
 self.addEventListener('activate', event => {
-  swLog('info', 'Activation du Service Worker');
+  swLog('info', 'Activation du Service Worker - Nettoyage de TOUS les caches');
   event.waitUntil(
     caches.keys().then(cacheNames => {
+      // Supprimer TOUS les caches pour éviter les problèmes
       return Promise.all(
         cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            swLog('info', 'Suppression ancien cache: ' + cacheName);
-            return caches.delete(cacheName);
-          }
+          swLog('info', 'Suppression cache: ' + cacheName);
+          return caches.delete(cacheName);
         })
       );
     })
@@ -61,71 +40,11 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Stratégie de cache: Network First, puis Cache
+// Stratégie de cache: DÉSACTIVÉ - Network only
 self.addEventListener('fetch', event => {
-  // Ignorer les requêtes non-GET
-  if (event.request.method !== 'GET') return;
-
-  const url = new URL(event.request.url);
-
-  // Ignorer tout ce qui est cross-origin (fonts, CDN, wikimedia, etc.)
-  if (url.origin !== self.location.origin) {
-    return;
-  }
-
-  // Ne pas mettre en cache les assets avec un cache-busting type "?v=..."
-  const hasCacheBuster = url.searchParams.has('v');
-
-  // Ignorer les requêtes Firebase et Google Auth
-  if (event.request.url.includes('firebasestorage') || 
-      event.request.url.includes('firebaseapp') ||
-      event.request.url.includes('googleapis') ||
-      event.request.url.includes('google.com/accounts') ||
-      event.request.url.includes('gstatic.com/firebasejs') ||
-      event.request.url.includes('identitytoolkit') ||
-      event.request.url.includes('securetoken') ||
-      event.request.url.includes('__/auth/')) {
-    swLog('debug', 'Requête Firebase/Auth ignorée: ' + event.request.url);
-    return;
-  }
-  
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        // Ne cacher que les réponses réussies et de type basic
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          if (response && response.status === 404) {
-            swLog('warn', 'Ressource 404: ' + event.request.url);
-          }
-          return response;
-        }
-
-        // Sauter la mise en cache si cache-buster présent
-        if (!hasCacheBuster) {
-          const responseToCache = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-
-        return response;
-      })
-      .catch(error => {
-        swLog('warn', 'Fetch échoué, utilisation du cache pour: ' + event.request.url, error);
-        // Si le réseau échoue, utiliser le cache
-        return caches.match(event.request).then(cachedResponse => {
-          // Si c'est une requête de navigation et qu'il n'y a pas de cache, retourner index.html
-          if (!cachedResponse && event.request.mode === 'navigate') {
-            swLog('info', 'Redirection navigation vers index.html pour: ' + event.request.url);
-            return caches.match('/index.html');
-          }
-          if (!cachedResponse) {
-            swLog('error', 'Aucun cache disponible pour: ' + event.request.url);
-          }
-          return cachedResponse;
-        });
-      })
-  );
+  // Service Worker en mode passthrough - pas de cache du tout
+  // Toutes les requêtes passent directement au réseau
+  return;
 });
 
 // Gestion des clics sur les notifications
